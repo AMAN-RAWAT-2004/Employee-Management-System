@@ -12,7 +12,7 @@ import { useContext } from "react";
 import { ModalContext } from "../context/modalContext";
 import axios from "axios";
 import { toast } from "sonner";
-import { MdOutlineFreeCancellation } from "react-icons/md";
+import { MdWeekend } from "react-icons/md";
 
 import {
   BarChart,
@@ -187,17 +187,16 @@ const Attendance = () => {
               <p className="text-gray-400">/ Attendance</p>
             </div>
           </div>
-          {loggedInUser && loggedInUser.role === "admin" ? (
-            <button
-              onClick={handleAttendancePopupForm}
-              className="flex justify-center items-center bg-blue-500 text-white px-4 py-2 rounded-xl gap-2 hover:bg-blue-600 w-full md:w-auto"
-            >
-              <GoPlus className="text-xl" />
-              Add Attendance
-            </button>
-          ) : (
-            ""
-          )}
+
+          <button
+            onClick={handleAttendancePopupForm}
+            className="flex justify-center items-center bg-blue-500 text-white px-4 py-2 rounded-xl gap-2 hover:bg-blue-600 w-full md:w-auto"
+          >
+            <GoPlus className="text-xl" />
+            {loggedInUser.role === "admin"
+              ? "Add Attendance"
+              : "Mark Attendance"}
+          </button>
         </div>
 
         {loggedInUser && loggedInUser.role === "admin" ? (
@@ -307,7 +306,7 @@ const Attendance = () => {
                         (record, index) => (
                           <td
                             key={index}
-                            className={`h-10 ${record?.status === "Weekend" ? "bg-gray-50" : " "} `}
+                            className={`h-10 ${record?.status === "Weekend" ? "bg-gray-100" : " "} `}
                           >
                             {record?.status === "Present" ? (
                               <IoCheckmarkCircleOutline className="text-blue-500 mx-auto text-lg" />
@@ -316,8 +315,8 @@ const Attendance = () => {
                             ) : record?.status === "Leave" ? (
                               <FcLeave className="mx-auto text-lg" />
                             ) : record?.status === "Weekend" ? (
-                              <p className="mx-auto text-sm  text-gray-500">
-                                w
+                              <p className="mx-auto text-xs  text-gray-500">
+                                W
                               </p>
                             ) : (
                               <span className="text-gray-400">-</span>

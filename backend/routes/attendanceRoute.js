@@ -6,7 +6,7 @@ const authMiddleware = require("./../middlewares/authMiddleware");
 router.post(
   "/add-attendance",
   authMiddleware.protect,
-  authMiddleware.admin,
+
   attendanceController.addAttendance,
 );
 router.get(
@@ -26,7 +26,7 @@ router.post(
 
 router.get(
   "/statistics",
-  
+
   attendanceController.getAttendanceStatistics,
 );
 

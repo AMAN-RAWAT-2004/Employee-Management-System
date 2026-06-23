@@ -328,6 +328,23 @@ exports.getAttendanceStatistics = async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: "leaves",
+          let: { employeeId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$employee", "$$employeeId"],
+                },
+                status: "Approved",
+              },
+            },
+          ],
+          as: "approvedLeaves",
+        },
+      },
+      {
         $project: {
           _id: 1,
           employeeId: "$_id",
@@ -360,15 +377,7 @@ exports.getAttendanceStatistics = async (req, res) => {
           },
 
           totalLeave: {
-            $size: {
-              $filter: {
-                input: "$attendanceRecords",
-                as: "record",
-                cond: {
-                  $eq: ["$$record.status", "Leave"],
-                },
-              },
-            },
+            $size: "$approvedLeaves",
           },
 
           totalRecords: {

@@ -236,6 +236,7 @@ const AddLeave = () => {
               <option value="Casual">Casual</option>
               <option value="Paid">Paid</option>
               <option value="Unpaid">Unpaid</option>
+              <option value="HalfDay">HalfDay</option>
               <option value="Other">Other</option>
             </select>
           </div>
