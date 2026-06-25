@@ -4,46 +4,38 @@ const Leave = require("../model/leaveModel");
 
 exports.addLeave = async (req, res) => {
   try {
-    const { employee, startDate, endDate, leaveType, reason } = req.body;
+    const {
+      employee,
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      leaveType,
+      reason,
+    } = req.body;
 
-    if (!employee || !leaveType || !startDate || !endDate) {
+    // Validation
+    if (!employee || !leaveType || !startDate) {
       return res.status(400).json({
         success: false,
-        message: "Please fill all required fields",
+        message: "Required fields missing",
       });
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    if (end < start) {
-      return res.status(400).json({
-        success: false,
-        message: "End date cannot be before start date",
-      });
-    }
-
-    // Calculate leave days excluding weekends
-    let totalDays = 0;
-
-    for (
-      let current = new Date(start);
-      current <= end;
-      current.setDate(current.getDate() + 1)
-    ) {
-      const day = current.getDay();
-
-      if (day !== 0 && day !== 6) {
-        totalDays++;
+    if (leaveType === "HalfDay") {
+      if (!startTime || !endTime) {
+        return res.status(400).json({
+          success: false,
+          message: "Start time and End time are required",
+        });
       }
-    }
-
-    // Prevent leave request if selected range contains only weekends
-    if (totalDays === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Selected dates contain only weekends",
-      });
+    } else {
+      if (!endDate) {
+        return res.status(400).json({
+          success: false,
+          message: "End date is required",
+        });
+      }
     }
 
     // Employee validation
@@ -55,27 +47,97 @@ exports.addLeave = async (req, res) => {
         message: "Employee not found",
       });
     }
+    const weeklyOffs = employeeExists.weeklyOffs || [];
+    let start;
+    let end;
+    let totalDays = 0;
 
-    // Check overlapping leaves
-    const existingLeave = await Leave.findOne({
-      employee,
-      startDate: { $lte: end },
-      endDate: { $gte: start },
-    });
+    if (leaveType === "HalfDay") {
+      start = new Date(startDate);
+      end = new Date(startDate);
 
-    if (existingLeave) {
-      return res.status(400).json({
-        success: false,
-        message: "Leave already exists for the selected dates",
+      const dayName = start.toLocaleDateString("en-US", {
+        weekday: "long",
       });
+
+      if (weeklyOffs.includes(dayName)) {
+        return res.status(400).json({
+          success: false,
+          message: `Half Day leave cannot be applied on ${dayName} because it is a weekly off`,
+        });
+      }
+      totalDays = 0.5;
+
+      // Check existing half/full day leave on same date
+      const existingLeave = await Leave.findOne({
+        employee,
+        startDate: {
+          $gte: new Date(startDate + "T00:00:00.000Z"),
+          $lte: new Date(startDate + "T23:59:59.999Z"),
+        },
+      });
+
+      if (existingLeave) {
+        return res.status(400).json({
+          success: false,
+          message: "Leave already exists for this date",
+        });
+      }
+    } else {
+      start = new Date(startDate);
+      end = new Date(endDate);
+
+      if (end < start) {
+        return res.status(400).json({
+          success: false,
+          message: "End date cannot be before start date",
+        });
+      }
+
+      // Calculate working days excluding weekends
+      for (
+        let current = new Date(start);
+        current <= end;
+        current.setDate(current.getDate() + 1)
+      ) {
+        const dayName = current.toLocaleDateString("en-US", {
+          weekday: "long",
+        });
+
+        if (!weeklyOffs.includes(dayName)) {
+          totalDays++;
+        }
+      }
+
+      if (totalDays === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Selected dates contain only weekly offs",
+        });
+      }
+
+      // Check overlapping leave
+      const existingLeave = await Leave.findOne({
+        employee,
+        startDate: { $lte: end },
+        endDate: { $gte: start },
+      });
+
+      if (existingLeave) {
+        return res.status(400).json({
+          success: false,
+          message: "Leave already exists for the selected dates",
+        });
+      }
     }
 
-    // Create leave
     const leave = await Leave.create({
       employee,
       leaveType,
       startDate: start,
-      endDate: end,
+      endDate: leaveType === "HalfDay" ? null : end,
+      startTime: leaveType === "HalfDay" ? startTime : null,
+      endTime: leaveType === "HalfDay" ? endTime : null,
       reason,
       totalDays,
       status: "Pending",
@@ -101,33 +163,58 @@ exports.addLeave = async (req, res) => {
 
 exports.fetchLeaves = async (req, res) => {
   try {
-    const leaves = await Leave.find({}).populate(
-      "employee",
-      "name profilePhoto department designation",
-    );
-    if (!leaves) {
-      return res.status(404).json({
-        message: "No Leaves Found",
-      });
+    const page = req.query.page ? Number(req.query.page) : null;
+    const limit = req.query.limit ? Number(req.query.limit) : null;
+
+    const totalLeaves = await Leave.countDocuments();
+
+    let query = Leave.find({})
+      .populate("employee", "name profilePhoto department designation")
+      .sort({ createdAt: -1 });
+    if (page && limit) {
+      const skip = (page - 1) * limit;
+      query = query.skip(skip).limit(limit);
     }
+    const leaves = await query;
     const formattedLeaves = leaves.map((leave) => {
-      const leaveDays =
-        Math.ceil(
-          (new Date(leave.endDate) - new Date(leave.startDate)) /
-            (1000 * 60 * 60 * 24),
-        ) + 1;
+      let leaveDays;
+
+      if (leave.leaveType === "HalfDay") {
+        leaveDays = 0.5;
+      } else {
+        leaveDays =
+          Math.ceil(
+            (new Date(leave.endDate) - new Date(leave.startDate)) /
+              (1000 * 60 * 60 * 24),
+          ) + 1;
+      }
 
       return {
         ...leave.toObject(),
         leaveDays,
       };
     });
-    res.status(200).json({
-      message: "Succesfully fetch leaves",
+
+    return res.status(200).json({
+      success: true,
+      message: "Successfully fetched leaves",
+      totalLeaves,
       leaves: formattedLeaves,
+      pagination:
+        page && limit
+          ? {
+              totalLeaves,
+              currentPage: page,
+              totalPages: Math.ceil(totalLeaves / limit),
+              limit,
+              hasNextPage: page < Math.ceil(totalLeaves / limit),
+              hasPrevPage: page > 1,
+            }
+          : null,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
+      success: false,
       message: "Server Error",
       error: error.message,
     });
@@ -139,7 +226,7 @@ exports.updateLeave = async (req, res) => {
     const { leaveId } = req.params;
     const { status, startDate, endDate, leaveType, reason } = req.body;
 
-    const leave = await Leave.findById(leaveId);
+    const leave = await Leave.findById(leaveId).populate("employee");
 
     if (!leave) {
       return res.status(404).json({
@@ -148,27 +235,42 @@ exports.updateLeave = async (req, res) => {
       });
     }
 
-    // if (leave.status !== "Pending") {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Only pending leaves can be updated",
-    //   });
-    // }
-
     const updatedStartDate = startDate || leave.startDate;
     const updatedEndDate = endDate || leave.endDate;
+    const updatedLeaveType = leaveType || leave.leaveType;
 
-    if (new Date(updatedEndDate) < new Date(updatedStartDate)) {
-      return res.status(400).json({
-        success: false,
-        message: "End date must be after start date",
+    // Date validation
+    if (updatedLeaveType !== "HalfDay") {
+      if (new Date(updatedEndDate) < new Date(updatedStartDate)) {
+        return res.status(400).json({
+          success: false,
+          message: "End date must be after start date",
+        });
+      }
+    }
+
+    // Half Day validation against employee weekly offs
+    if (updatedLeaveType === "HalfDay") {
+      const leaveDate = new Date(updatedStartDate);
+
+      const dayName = leaveDate.toLocaleDateString("en-US", {
+        weekday: "long",
       });
+
+      const weeklyOffs = leave.employee.weeklyOffs || [];
+
+      if (weeklyOffs.includes(dayName)) {
+        return res.status(400).json({
+          success: false,
+          message: `Half Day leave cannot be applied on ${dayName} (Weekly Off)`,
+        });
+      }
     }
 
     leave.startDate = updatedStartDate;
     leave.endDate = updatedEndDate;
     leave.status = status || leave.status;
-    leave.leaveType = leaveType || leave.leaveType;
+    leave.leaveType = updatedLeaveType;
     leave.reason = reason || leave.reason;
 
     await leave.save();
@@ -211,7 +313,8 @@ exports.updateLeaveStatus = async (req, res) => {
   try {
     const { leaveId } = req.params;
     const { status } = req.body;
-
+    let approvedBy;
+    let approvedAt;
     const allowedStatuses = ["Pending", "Approved", "Rejected"];
 
     if (!status) {
@@ -220,7 +323,10 @@ exports.updateLeaveStatus = async (req, res) => {
         message: "Status is required",
       });
     }
-
+    if (status === "Approved") {
+      approvedBy = req.user;
+      approvedAt = Date.now();
+    }
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -230,7 +336,7 @@ exports.updateLeaveStatus = async (req, res) => {
 
     const leave = await Leave.findByIdAndUpdate(
       leaveId,
-      { status },
+      { status, approvedBy, approvedAt },
       { new: true, runValidators: true },
     );
 
@@ -355,37 +461,66 @@ exports.getLeaveDashboardStats = async (req, res) => {
 exports.fetchLeavesByEmployeeId = async (req, res) => {
   try {
     const { employeeId } = req.params;
+    const page = req.query.page ? Number(req.query.page) : null;
+    const limit = req.query.limit ? Number(req.query.limit) : null;
+
     const employee = await User.findById(employeeId);
     if (!employee) {
       return res.status(404).json({
         message: "Employee not Found",
       });
     }
-    const leave = await Leave.find({ employee: employeeId }).populate(
+    const totalLeaves = await Leave.countDocuments({ employee: employeeId });
+    let query =  Leave.find({ employee: employeeId }).populate(
       "employee",
       "name profilePhoto department designation",
     );
+    if(page && limit){
+      const skip=(page-1)*limit;
+      query.skip(skip).limit(limit)
+    }
+
+    const leave =await query;
     if (leave.length === 0) {
       return res.status(404).json({
         message: "Leaves not Found",
       });
     }
     const formattedLeaves = leave.map((leave) => {
-      const leaveDays =
-        Math.ceil(
-          (new Date(leave.endDate) - new Date(leave.startDate)) /
-            (1000 * 60 * 60 * 24),
-        ) + 1;
+      let leaveDays;
+
+      if (leave.leaveType === "HalfDay") {
+        leaveDays = 0.5;
+      } else {
+        leaveDays =
+          Math.ceil(
+            (new Date(leave.endDate) - new Date(leave.startDate)) /
+              (1000 * 60 * 60 * 24),
+          ) + 1;
+      }
 
       return {
         ...leave.toObject(),
         leaveDays,
       };
     });
+
     res.status(200).json({
       success: true,
       message: "Employee Leaves Found Successfully",
+      totalLeaves,
       leave: formattedLeaves,
+       pagination:
+        page && limit
+          ? {
+              totalLeaves,
+              currentPage: page,
+              totalPages: Math.ceil(totalLeaves / limit),
+              limit,
+              hasNextPage: page < Math.ceil(totalLeaves / limit),
+              hasPrevPage: page > 1,
+            }
+          : null,
     });
   } catch (error) {
     res.status(500).json({

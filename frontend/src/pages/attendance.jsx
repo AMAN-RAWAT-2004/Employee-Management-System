@@ -315,9 +315,13 @@ const Attendance = () => {
                             ) : record?.status === "Leave" ? (
                               <FcLeave className="mx-auto text-lg" />
                             ) : record?.status === "Weekend" ? (
-                              <p className="mx-auto text-xs  text-gray-500">
-                                W
-                              </p>
+                              <span className="mx-auto text-xs  text-green-500">
+                                WO
+                              </span>
+                            ) : record?.status === "HalfDay" ? (
+                              <span className="mx-auto text-lg  text-red-500">
+                                ½
+                              </span>
                             ) : (
                               <span className="text-gray-400">-</span>
                             )}
@@ -332,8 +336,18 @@ const Attendance = () => {
                   ))}
                 </tbody>
               </table>
+              {filteredEmployeeAttendance.length === 0 && (
+                <div className="bg-white rounded-2xl border border-gray-200 p-10 mt-5 text-center">
+                  <h3 className="text-lg font-semibold text-gray-700">
+                    No Employees Found
+                  </h3>
+                  <p className="text-gray-500 mt-2">
+                    Try searching with another name.
+                  </p>
+                </div>
+              )}
             </div>
-            <div className=" w-full flex items-center justify-center md:justify-end  gap-4 mt-8 ">
+            <div className=" w-full flex items-center justify-center md:justify-end  gap-4 mt-5 ">
               <button
                 disabled={page === 1}
                 onClick={() => setPage((prev) => prev - 1)}
@@ -358,7 +372,7 @@ const Attendance = () => {
         ) : (
           " "
         )}
-        {loggedInUser && loggedInUser.role === "admin" ? (
+        {loggedInUser && loggedInUser?.role === "admin" ? (
           <div className=" w-full lg:w-1/2 h-full bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -454,11 +468,12 @@ const Attendance = () => {
                             </div>
                           </div>
 
-                          <div className="space-y-1 text-sm">
-                            <p>✅ Present: {employee.totalPresent}</p>
-                            <p>❌ Absent: {employee.totalAbsent}</p>
-                            <p>🏖 Leave: {employee.totalLeave}</p>
-                            <p>📊 Records: {employee.totalRecords}</p>
+                          <div className="space-y-0.5 text-xs">
+                            <p>Present: {employee.totalPresent}</p>
+                            <p>Absent: {employee.totalAbsent}</p>
+                            <p>Leave: {employee.totalLeave}</p>
+                            <p>HalfDay: {employee.totalHalfDay}</p>
+                            <p>Records: {employee.totalRecords}</p>
                           </div>
                         </div>
                       );
@@ -533,7 +548,7 @@ const Attendance = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 p-5">
+                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 p-5">
                     <div className="bg-green-50 border border-green-100 rounded-xl p-4">
                       <p className="text-sm font-semibold text-gray-500">
                         Present
@@ -570,7 +585,7 @@ const Attendance = () => {
                       </h2>
                     </div>
 
-                    <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
+                    {/* <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
                       <p className="text-sm font-semibold text-gray-500">
                         Avg Hours
                       </p>
@@ -579,7 +594,7 @@ const Attendance = () => {
                           0}
                         h
                       </h2>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               )}

@@ -8,9 +8,10 @@ import { toast } from "sonner";
 import { ModalContext } from "../context/modalContext";
 const Home = () => {
   const [users, setUsers] = useState([]);
-  const [newUsers, setNewUsers] = useState([]);
+  const [newUsers, setNewUsers] = useState(0);
   const [totalEmployees, setTotalEmployees] = useState(null);
   const [recentUsers, setRecentUsers] = useState([]);
+  const [onLeaveToday, setOnLeaveToday] = useState(0);
   const token = localStorage.getItem("token");
   const { dark, loggedInUser } = useContext(ModalContext);
   useEffect(() => {
@@ -37,30 +38,7 @@ const Home = () => {
 
     fetchUsers();
   }, []);
-  useEffect(() => {
-    const fetchNewUsers = async () => {
-      try {
-        if (loggedInUser.role === "admin") {
-          const response = await axios.get(
-            `${import.meta.env.VITE_BACKEND_URL}/api/v1/employee/new-employee`,
-            {
-              headers: {
-                authorization: `Bearer ${token}`,
-              },
-            },
-          );
 
-          setNewUsers(response.data);
-        }
-        return;
-      } catch (error) {
-        console.log(error.message);
-        toast.error(error?.response?.data?.message);
-      }
-    };
-
-    fetchNewUsers();
-  }, []);
   useEffect(() => {
     const fetchRecentUsers = async () => {
       try {
@@ -74,7 +52,9 @@ const Home = () => {
             },
           );
 
-          setRecentUsers(response.data);
+          setRecentUsers(response.data.recentEmployees);
+          setNewUsers(response.data.CountNewEmployees);
+          setOnLeaveToday(response.data.onLeaveToday);
         }
         return;
       } catch (error) {
@@ -141,9 +121,7 @@ const Home = () => {
               <IoPersonAdd />
             </div>
 
-            <h2 className="text-3xl font-bold text-gray-900">
-              {newUsers.length}
-            </h2>
+            <h2 className="text-3xl font-bold text-gray-900">{newUsers}</h2>
 
             <p className="text-gray-700 font-semibold mt-2">New Employees</p>
 
@@ -168,7 +146,7 @@ const Home = () => {
               <BsPersonXFill />
             </div>
 
-            <h2 className="text-3xl font-bold text-gray-900">126</h2>
+            <h2 className="text-3xl font-bold text-gray-900">{onLeaveToday}</h2>
 
             <p className="text-gray-700 font-semibold mt-2">On Leave</p>
 

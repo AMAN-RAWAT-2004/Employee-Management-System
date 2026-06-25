@@ -31,6 +31,7 @@ const AddEmployee = () => {
     address: "",
     dateOfBirth: "",
     gender: "",
+    weeklyOffs: [],
   });
   useEffect(() => {
     if (editingEmployee) {
@@ -48,6 +49,7 @@ const AddEmployee = () => {
           ? editingEmployee.dateOfBirth.split("T")[0]
           : "",
         gender: editingEmployee.gender || "",
+        weeklyOffs: editingEmployee.weeklyOffs || [],
       });
     }
   }, [editingEmployee]);
@@ -95,7 +97,6 @@ const AddEmployee = () => {
     } catch (error) {
       console.error("Image Upload Error:", error);
       toast.error(error?.response?.data?.message);
-
     } finally {
       setUploading(false);
     }
@@ -139,6 +140,7 @@ const AddEmployee = () => {
           address: "",
           dateOfBirth: "",
           gender: "",
+          weeklyOffs: [],
         });
         setIsAddEmployeeOpen(false);
         setEditingEmployee(null);
@@ -167,6 +169,7 @@ const AddEmployee = () => {
           address: "",
           dateOfBirth: "",
           gender: "",
+          weeklyOffs: [],
         });
         setIsAddEmployeeOpen(false);
         setEditingEmployee(null);
@@ -340,7 +343,47 @@ const AddEmployee = () => {
               <option value="Other">Other</option>
             </select>
           </div>
+          {/* WeeklyOffs  */}
+          <div className="md:col-span-2">
+            <label className="block font-medium text-gray-500 mb-2">
+              Weekly Offs
+            </label>
 
+            <div className="flex flex-wrap gap-4">
+              {[
+                "Sunday",
+                // "Monday",
+                // "Tuesday",
+                // "Wednesday",
+                // "Thursday",
+                // "Friday",
+                "Saturday",
+              ].map((day) => (
+                <label key={day} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.weeklyOffs.includes(day)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          weeklyOffs: [...prev.weeklyOffs, day],
+                        }));
+                      } else {
+                        setFormData((prev) => ({
+                          ...prev,
+                          weeklyOffs: prev.weeklyOffs.filter(
+                            (item) => item !== day,
+                          ),
+                        }));
+                      }
+                    }}
+                  />
+                  {day}
+                </label>
+              ))}
+            </div>
+          </div>
           {/* Address */}
           <div className="md:col-span-2">
             <label className="block  font-medium text-gray-500">Address</label>

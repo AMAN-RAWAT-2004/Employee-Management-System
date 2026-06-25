@@ -23,6 +23,8 @@ const AddLeave = () => {
     leaveType: "",
     startDate: "",
     endDate: "",
+    startTime: "",
+    endTime: "",
     reason: "",
   });
 
@@ -102,6 +104,8 @@ const AddLeave = () => {
           leaveType: "",
           startDate: "",
           endDate: "",
+          startTime: "",
+          endTime: "",
           reason: "",
         });
         setRefreshEmployee((prev) => !prev);
@@ -125,6 +129,8 @@ const AddLeave = () => {
           leaveType: "",
           startDate: "",
           endDate: "",
+          startTime: "",
+          endTime: "",
           reason: "",
         });
 
@@ -154,6 +160,8 @@ const AddLeave = () => {
       endDate: editLeave.endDate
         ? new Date(editLeave.endDate).toISOString().split("T")[0]
         : "",
+      startTime: editLeave.startTime || "",
+      endTime: editLeave.endTime || "",
       reason: editLeave.reason || "",
     });
   }, [editLeave]);
@@ -236,41 +244,86 @@ const AddLeave = () => {
               <option value="Casual">Casual</option>
               <option value="Paid">Paid</option>
               <option value="Unpaid">Unpaid</option>
-              <option value="HalfDay">HalfDay</option>
+              <option value="HalfDay">Half Day</option>
               <option value="Other">Other</option>
             </select>
           </div>
 
           {/* Dates */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Start Date
-              </label>
+          {formData.leaveType === "HalfDay" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Start Date
+                </label>
 
-              <input
-                type="date"
-                name="startDate"
-                value={formData.startDate}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
+                <input
+                  type="date"
+                  name="startDate"
+                  value={formData.startDate}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Start Time
+                </label>
+
+                <input
+                  type="time"
+                  name="startTime"
+                  value={formData.startTime}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  End Time
+                </label>
+
+                <input
+                  type="time"
+                  name="endTime"
+                  value={formData.endTime}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
             </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Start Date
+                </label>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">End Date</label>
+                <input
+                  type="date"
+                  name="startDate"
+                  value={formData.startDate}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
 
-              <input
-                type="date"
-                name="endDate"
-                value={formData.endDate}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  End Date
+                </label>
+
+                <input
+                  type="date"
+                  name="endDate"
+                  value={formData.endDate}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Reason */}
           <div>

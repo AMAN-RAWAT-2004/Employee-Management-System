@@ -5,6 +5,7 @@ import { ModalContext } from "../context/modalContext";
 import { BsThreeDots } from "react-icons/bs";
 import axios from "axios";
 import { toast } from "sonner";
+import { MdArrowBackIos, MdArrowForwardIos } from "react-icons/md";
 
 const Leave = () => {
   const {
@@ -18,6 +19,8 @@ const Leave = () => {
   } = useContext(ModalContext);
   const menuRef = useRef(null);
   const [openMenuId, setOpenMenuId] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [particularLeaves, setParticularLeaves] = useState([]);
   const [stats, setStats] = useState({});
 
@@ -30,9 +33,10 @@ const Leave = () => {
     try {
       if (loggedInUser.role !== "admin") {
         const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/v1/leave/${loggedInUser._id}/leaves`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/v1/leave/${loggedInUser._id}/leaves?page=${page}&limit=6`,
         );
         setParticularLeaves(response.data.leave);
+        setTotalPages(response.data.pagination.totalPages);
       }
       return;
     } catch (error) {
@@ -64,9 +68,10 @@ const Leave = () => {
     try {
       if (loggedInUser.role === "admin") {
         const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/v1/leave/`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/v1/leave?page=${page}&limit=6`,
         );
         setLeaves(response.data.leaves);
+        setTotalPages(response.data.pagination.totalPages);
       }
       return;
     } catch (error) {
@@ -95,10 +100,19 @@ const Leave = () => {
   };
   // Fetching Data
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1);
+      fetchLeaves();
+      fetchLoggedInUserLeaves();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
+  useEffect(() => {
     fetchLeaves();
     fetchStats();
     fetchLoggedInUserLeaves();
-  }, [refreshEmployee, token]);
+  }, [refreshEmployee, page, token]);
 
   // Toggle Edit Menu
 
@@ -147,6 +161,19 @@ const Leave = () => {
     setEditLeave(leave);
     setOpenAddLeaveForm(true);
   };
+  const formatTime = (time) => {
+    if (!time) return "-";
+
+    const [hours, minutes] = time.split(":");
+    const date = new Date();
+    date.setHours(hours, minutes);
+
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
 
   return (
     <div className="w-full min-h-screen flex justify-center px-3 sm:px-6 md:px-10 lg:px-20 py-6">
@@ -183,7 +210,7 @@ const Leave = () => {
         {loggedInUser && loggedInUser.role === "admin" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 p-4">
             {/* Total Presents */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-2 transition-all duration-300 hover:border-blue-600">
+            <div className="bg-white border-2 border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-2 transition-all duration-300 hover:border-blue-600">
               <p className="text-3xl font-bold text-gray-900">
                 {stats.todayPresent}
                 <span className="text-base font-medium text-gray-400">
@@ -197,7 +224,7 @@ const Leave = () => {
             </div>
 
             {/* Planned Leaves */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-2 transition-all duration-300 hover:border-red-600">
+            <div className="bg-white border-2 border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-2 transition-all duration-300 hover:border-red-600">
               <p className="text-3xl font-bold text-gray-900">
                 {stats.plannedLeaves}
                 <span className="text-base font-medium text-gray-400">
@@ -211,7 +238,7 @@ const Leave = () => {
             </div>
 
             {/* Unplanned Leaves */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-2 transition-all duration-300 hover:border-cyan-500">
+            <div className="bg-white border-2 border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-2 transition-all duration-300 hover:border-cyan-500">
               <p className="text-3xl font-bold text-gray-900">
                 {stats.unplannedLeaves}
                 <span className="text-base font-medium text-gray-400">
@@ -225,7 +252,7 @@ const Leave = () => {
             </div>
 
             {/* Pending Requests */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:border-2 transition-all duration-300 hover:border-orange-600 hover:shadow-md ">
+            <div className="bg-white border-2 border-gray-200 rounded-xl p-5 shadow-sm hover:border-2 transition-all duration-300 hover:border-orange-600 hover:shadow-md ">
               <p className="text-3xl font-bold text-gray-900">
                 {stats.pendingLeaves}
                 <span className="text-base font-medium text-gray-400">
@@ -270,11 +297,18 @@ const Leave = () => {
                     </th>
 
                     <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold text-gray-600">
-                      Start
+                      Start Date
                     </th>
 
                     <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold text-gray-600">
-                      End
+                      End Date
+                    </th>
+                    <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold text-gray-600">
+                      Start Time
+                    </th>
+
+                    <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold text-gray-600">
+                      End Time
                     </th>
 
                     <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold text-gray-600">
@@ -329,12 +363,28 @@ const Leave = () => {
                         })}
                       </td>
 
-                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
-                        {new Date(leave.endDate).toLocaleDateString("en-GB", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
+                      <td className="px-3 md:px-6 py-3 text-center md:py-4 whitespace-nowrap">
+                        {leave.endDate
+                          ? new Date(leave.endDate).toLocaleDateString(
+                              "en-GB",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              },
+                            )
+                          : "-"}
+                      </td>
+                      <td className="px-3 md:px-6 py-3 md:py-4 text-center whitespace-nowrap">
+                        {leave.leaveType === "HalfDay"
+                          ? formatTime(leave.startTime)
+                          : "-"}
+                      </td>
+
+                      <td className="px-3 md:px-6 py-3 md:py-4 text-center whitespace-nowrap">
+                        {leave.leaveType === "HalfDay"
+                          ? formatTime(leave.endTime)
+                          : "-"}
                       </td>
 
                       <td className="px-3 md:px-6 py-3 md:py-4">
@@ -412,11 +462,18 @@ const Leave = () => {
                     </th>
 
                     <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold text-gray-600">
-                      Start
+                      Start Date
                     </th>
 
                     <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold text-gray-600">
-                      End
+                      End Date
+                    </th>
+                    <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold text-gray-600">
+                      Start Time
+                    </th>
+
+                    <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold text-gray-600">
+                      End Time
                     </th>
 
                     <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold text-gray-600">
@@ -467,12 +524,28 @@ const Leave = () => {
                         })}
                       </td>
 
-                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
-                        {new Date(leave.endDate).toLocaleDateString("en-GB", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
+                      <td className="px-3 md:px-6 py-3 text-center md:py-4 whitespace-nowrap">
+                        {leave.endDate
+                          ? new Date(leave.endDate).toLocaleDateString(
+                              "en-GB",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              },
+                            )
+                          : "-"}
+                      </td>
+                      <td className="px-3 md:px-6 py-3 md:py-4 text-center whitespace-nowrap">
+                        {leave.leaveType === "HalfDay"
+                          ? formatTime(leave.startTime)
+                          : "-"}
+                      </td>
+
+                      <td className="px-3 md:px-6 py-3 md:py-4 text-center whitespace-nowrap">
+                        {leave.leaveType === "HalfDay"
+                          ? formatTime(leave.endTime)
+                          : "-"}
                       </td>
 
                       <td className="px-3 md:px-6 py-3 md:py-4">
@@ -494,6 +567,27 @@ const Leave = () => {
               </table>
             </div>
           )}
+          <div className=" w-full flex items-center justify-center md:justify-end gap-4 mt-8 xl:mr-60">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((prev) => prev - 1)}
+              className={`px-2 py-1 text-sm  rounded flex border items-center justify-center  transition-all duration-150  bg-white text-blue-600 border-blue-500 hover:bg-blue-600 hover:text-white disabled:cursor-not-allowed  `}
+            >
+              <MdArrowBackIos /> Previous
+            </button>
+
+            <span className={`text-black" text-xs md:text-[14px]`}>
+              Page {page} of {totalPages}
+            </span>
+
+            <button
+              disabled={page === totalPages}
+              onClick={() => setPage((prev) => prev + 1)}
+              className={`px-2 py-1 text-sm  bg-white text-blue-600 border-blue-500 hover:bg-blue-600 hover:text-white flex  border  items-center justify-center rounded transition-all duration-150  disabled:cursor-not-allowed  `}
+            >
+              Next <MdArrowForwardIos />
+            </button>
+          </div>
         </div>
       </div>
     </div>

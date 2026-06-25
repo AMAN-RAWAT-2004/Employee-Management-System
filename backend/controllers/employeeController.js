@@ -1,6 +1,7 @@
 const User = require("../model/userModel");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const Leave = require("../model/leaveModel");
 
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECURE, {
@@ -21,6 +22,7 @@ exports.addEmployee = async (req, res) => {
       dateOfBirth,
       address,
       gender,
+      weeklyOffs,
     } = req.body;
 
     if (
@@ -63,6 +65,7 @@ exports.addEmployee = async (req, res) => {
       dateOfBirth,
       address,
       gender,
+      weeklyOffs,
       role: "employee",
     });
 
@@ -94,6 +97,7 @@ exports.updateEmployee = async (req, res) => {
       dateOfBirth,
       address,
       gender,
+      weeklyOffs,
     } = req.body;
 
     const employee = await User.findById(id);
@@ -124,6 +128,7 @@ exports.updateEmployee = async (req, res) => {
     employee.dateOfBirth = dateOfBirth || employee.dateOfBirth;
     employee.address = address || employee.address;
     employee.gender = gender || employee.gender;
+    employee.weeklyOffs = weeklyOffs || employee.weeklyOffs;
 
     if (password) {
       employee.password = await bcrypt.hash(password, 12);
@@ -212,28 +217,7 @@ exports.fetchEmployeeOnly = async (req, res) => {
     });
   }
 };
-exports.newEmployee = async (req, res) => {
-  try {
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-    const newEmployees = await User.find({
-      role: "employee",
-      createdAt: { $gte: oneMonthAgo },
-    }).sort({ createdAt: -1 });
-
-    res.status(200).json({
-      success: true,
-      length: newEmployees.length,
-      newEmployees,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
 exports.recentEmployee = async (req, res) => {
   try {
     const recentEmployees = await User.find({ role: "employee" })
@@ -241,13 +225,46 @@ exports.recentEmployee = async (req, res) => {
         createdAt: -1,
       })
       .limit(5);
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const onLeaveToday =
+      (
+        await Leave.distinct("employee", {
+          status: "Approved",
+          startDate: { $lt: tomorrow },
+          $or: [
+            {
+              endDate: { $gte: today },
+            },
+            {
+              leaveType: "HalfDay",
+            },
+          ],
+        })
+      ).length - 1;
+
+    const CountNewEmployees = await User.countDocuments({
+      role: "employee",
+      createdAt: { $gte: oneMonthAgo },
+    });
 
     if (recentEmployees.length === 0) {
       return res.status(404).json({
         error: "No employees found",
       });
     }
-    res.status(200).json(recentEmployees);
+    res.status(200).json({
+      recentEmployees,
+      CountNewEmployees,
+      onLeaveToday,
+    });
   } catch (error) {
     res.status(500).json({
       message: error.message,

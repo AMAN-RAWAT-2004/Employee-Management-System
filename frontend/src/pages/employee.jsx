@@ -89,10 +89,6 @@ const Employee = () => {
     setOpenMenuId((prev) => (prev === id ? null : id));
   };
 
-  // const users = users.filter((user) =>
-  //   user?.name?.toLowerCase().includes(search?.toLowerCase()),
-  // );
-
   const handleDelete = async (id) => {
     try {
       await axios.delete(

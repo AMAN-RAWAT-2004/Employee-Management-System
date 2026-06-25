@@ -39,7 +39,7 @@ router.get(
 router.get(
   "/employee/:employeeId",
   authMiddleware.protect,
-  attendanceController.getAttendanceByEmployee,
+  attendanceController.getTodayAttendanceByEmployee,
 );
 
 router

@@ -65,7 +65,7 @@ const userSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["Active", "Inactive", "On Leave"],
+      enum: ["Active", "Inactive"],
       default: "Active",
     },
 
@@ -80,6 +80,19 @@ const userSchema = new mongoose.Schema(
     gender: {
       type: String,
       enum: ["Male", "Female", "Other"],
+    },
+    weeklyOffs: {
+      type: [String],
+      enum: [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ],
+      default: ["Sunday"],
     },
 
     lastLogin: {

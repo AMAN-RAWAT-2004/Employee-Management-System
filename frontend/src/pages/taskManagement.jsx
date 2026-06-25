@@ -19,6 +19,7 @@ const TaskManagement = () => {
     loggedInUser,
   } = useContext(ModalContext);
   const [tasks, setTasks] = useState([]);
+  const [loggedInTasks, setLoggedInTasks] = useState([]);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [showAssignPopup, setShowAssignPopup] = useState(null);
   const [users, setUsers] = useState([]);
@@ -48,6 +49,7 @@ const TaskManagement = () => {
   };
   useEffect(() => {
     fetchTasks();
+    loggedInUserTasks();
   }, [refreshEmployee, token]);
 
   const handleEdit = (user) => {
@@ -307,6 +309,26 @@ const TaskManagement = () => {
   const filteredTasks = tasks.filter((task) =>
     task?.title?.toLowerCase()?.includes(search?.toLowerCase()),
   );
+
+  const loggedInUserTasks = async () => {
+    try {
+      if (loggedInUser.role === "employee") {
+        const response = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/v1/tasks/logged-In/tasks`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        // console.log(response.data.tasks);
+        setLoggedInTasks(response.data.tasks);
+      }
+      return;
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+    }
+  };
   return (
     <div className="w-full min-h-screen flex justify-center items-start px-4 sm:px-6 md:px-10 lg:px-20 xl:px-20 py-6 md:py-10">
       <div className="flex flex-col w-full max-w-7xl gap-8">
@@ -341,6 +363,7 @@ const TaskManagement = () => {
           )}
         </div>
         {/* Search Bar */}
+
         <div
           className={`rounded-2xl p-4 border shadow-sm transition-colors duration-200 ${
             dark ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
@@ -374,293 +397,385 @@ const TaskManagement = () => {
             </div>
           </div>
         </div>
+        {loggedInUser && loggedInUser?.role === "admin" ? (
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {columns.map((column) => {
+                const columnTasks = filteredTasks.filter(
+                  (task) => task.status === column.id,
+                );
 
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {columns.map((column) => {
-              const columnTasks = filteredTasks.filter(
-                (task) => task.status === column.id,
-              );
+                return (
+                  <Droppable droppableId={column.id} key={column.id}>
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`${column.color} border-t-3 ${column.border} rounded-xl p-4 min-h-175`}
+                      >
+                        <div className="flex justify-between items-center mb-4">
+                          <h2 className="font-semibold text-lg">
+                            {column.title}
+                          </h2>
 
-              return (
-                <Droppable droppableId={column.id} key={column.id}>
-                  {(provided) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`${column.color} border-t-3 ${column.border} rounded-xl p-4 min-h-175`}
-                    >
-                      <div className="flex justify-between items-center mb-4">
-                        <h2 className="font-semibold text-lg">
-                          {column.title}
-                        </h2>
-
-                        <span
-                          className={`${column.bg} text-white px-3 py-1.5 rounded-full text-sm`}
-                        >
-                          {columnTasks.length}
-                        </span>
-                      </div>
-
-                      <div className="space-y-5">
-                        {columnTasks.map((task, index) => (
-                          <Draggable
-                            key={task._id}
-                            draggableId={task._id}
-                            index={index}
+                          <span
+                            className={`${column.bg} text-white px-3 py-1.5 rounded-full text-sm`}
                           >
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`bg-white relative rounded-xl p-4 border border-gray-100 transition-all duration-200 ${
-                                  snapshot.isDragging
-                                    ? "shadow-2xl rotate-2"
-                                    : "shadow-sm hover:shadow-md  "
-                                }`}
-                              >
+                            {columnTasks.length}
+                          </span>
+                        </div>
+
+                        <div className="space-y-5">
+                          {columnTasks.map((task, index) => (
+                            <Draggable
+                              key={task._id}
+                              draggableId={task._id}
+                              index={index}
+                            >
+                              {(provided, snapshot) => (
                                 <div
-                                  ref={openMenuId === task._id ? menuRef : null}
-                                  className="w-full flex justify-between items-end mb-2"
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`bg-white relative rounded-xl p-4 border border-gray-100 transition-all duration-200 ${
+                                    snapshot.isDragging
+                                      ? "shadow-2xl rotate-2"
+                                      : "shadow-sm hover:shadow-md  "
+                                  }`}
                                 >
-                                  <select
-                                    value={task.priority}
-                                    onChange={(e) =>
-                                      handlePriorityChange(
-                                        task._id,
-                                        e.target.value,
-                                      )
+                                  <div
+                                    ref={
+                                      openMenuId === task._id ? menuRef : null
                                     }
-                                    className={`text-xs rounded-lg px-3 py-1 border-none outline-none cursor-pointer ${
-                                      task.priority === "High"
-                                        ? "bg-red-100 text-red-600"
-                                        : task.priority === "Medium"
-                                          ? "bg-yellow-100 text-yellow-600"
-                                          : "bg-green-100 text-green-600"
-                                    }`}
+                                    className="w-full flex justify-between items-end mb-2"
                                   >
-                                    <option
-                                      className="bg-white text-gray-400"
-                                      value="Low"
-                                    >
-                                      Low
-                                    </option>
-                                    <option
-                                      className="bg-white text-gray-400"
-                                      value="Medium"
-                                    >
-                                      Medium
-                                    </option>
-                                    <option
-                                      className="bg-white text-gray-400"
-                                      value="High"
-                                    >
-                                      High
-                                    </option>
-                                  </select>
-                                  <button
-                                    onClick={() => toggleEditMenu(task._id)}
-                                    className="p-1 rounded-lg border border-gray-200 hover:bg-gray-100"
-                                  >
-                                    <BsThreeDots />
-                                  </button>
-                                </div>
-
-                                {openMenuId === task._id && (
-                                  <div className="absolute top-11 right-5 w-32 bg-white border border-gray-300 rounded-xl shadow-lg overflow-hidden z-20">
-                                    <button
-                                      onClick={() => handleEdit(task)}
-                                      className="w-full text-sm text-left px-4 py-3 hover:bg-gray-100"
-                                    >
-                                      Edit
-                                    </button>
-
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDelete(task._id);
-                                      }}
-                                      className="w-full text-sm text-left px-4 py-3 text-red-500 hover:bg-red-100"
-                                    >
-                                      Delete
-                                    </button>
-                                  </div>
-                                )}
-                                <h3 className="font-semibold capitalize">
-                                  {task.title}
-                                </h3>
-
-                                <p className="text-[12px] font-semibold text-gray-500 mt-2 line-clamp-3">
-                                  {task.description}
-                                </p>
-                                <div className=" flex justify-between items-center mt-4">
-                                  <div className="flex flex-col gap-1">
-                                    <h2 className="text-gray-500 text-xs ">
-                                      Start Date
-                                    </h2>
-
-                                    <p className="text-xs font-semibold">
-                                      {new Date(
-                                        task.startDate,
-                                      ).toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <h2 className="text-gray-500 text-xs ">
-                                      End Date
-                                    </h2>
-                                    <input
-                                      type="date"
-                                      className="text-xs w-auto font-semibold"
-                                      value={task.dueDate?.split("T")[0] || ""}
-                                      onChange={(e) =>
-                                        handleEditdueDate(
-                                          task._id,
-                                          e.target.value,
-                                        )
-                                      }
-                                      name="dueDate"
-                                    />
-                                  </div>
-                                </div>
-                                <div className="flex justify-between items-end ">
-                                  <div className="flex w-full gap-1 flex-col mt-4">
-                                    <p className="text-sm font-semibold">
-                                      AssignTo:
-                                    </p>
-                                    <div className="  flex flex-wrap gap-1 items-center justify-start ">
-                                      <div className="relative flex ">
-                                        {task.assignTo
-                                          ?.slice(0, 3)
-                                          .map((user, index) => (
-                                            <img
-                                              key={user._id}
-                                              src={
-                                                user.profilePhoto ||
-                                                `https://ui-avatars.com/api/?name=${user.name}`
-                                              }
-                                              alt={user.name}
-                                              title={user.name}
-                                              className="w-10 h-10 rounded-full border-2 border-white object-cover -ml-5 first:ml-0"
-                                              style={{ zIndex: index + 1 }}
-                                            />
-                                          ))}
-                                        {task.assignTo?.length > 3 && (
-                                          <div className="w-5 h-5 absolute -top-1 -right-1 z-30 flex justify-center items-center text-white rounded-full text-xs -ml-6 bg-red-400">
-                                            +{task.assignTo.length - 3}
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      <div className="relative z-30">
-                                        <button
-                                          onClick={() =>
-                                            handleOpenAssignPopup(task)
-                                          }
-                                          className={`w-10 h-10 rounded-full ${column.color} border-2 border-white flex justify-center items-center -ml-5`}
-                                        >
-                                          <FiPlus
-                                            className={`text-xl ${column.text}`}
-                                          />
-                                        </button>
-
-                                        {showAssignPopup === task._id && (
-                                          <div
-                                            ref={assignUserRef}
-                                            className="absolute left-0 top-12 z-50 bg-white  border border-gray-200 rounded-lg shadow-xl p-3 w-56"
-                                          >
-                                            <h4 className="font-semibold text-sm mb-2">
-                                              Assign Users
-                                            </h4>
-
-                                            <div className="max-h-30 overflow-y-auto">
-                                              {users.map((user) => (
-                                                <label
-                                                  key={user._id}
-                                                  className="flex items-center text-sm gap-2 py-1"
-                                                >
-                                                  <input
-                                                    type="checkbox"
-                                                    checked={selectedUsers.includes(
-                                                      user._id,
-                                                    )}
-                                                    onChange={() =>
-                                                      handleUserSelection(
-                                                        user._id,
-                                                      )
-                                                    }
-                                                  />
-                                                  <span>{user.name}</span>
-                                                </label>
-                                              ))}
-                                            </div>
-
-                                            <button
-                                              onClick={() =>
-                                                handleAssignTasksToUsers(task)
-                                              }
-                                              className="mt-2 text-sm w-full bg-blue-500 text-white py-1 rounded-lg"
-                                            >
-                                              Assign
-                                            </button>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="w-auto flex justify-center mb-4 items-center">
                                     <select
-                                      value={task.status}
+                                      value={task.priority}
                                       onChange={(e) =>
-                                        handleStatusUpdate(
+                                        handlePriorityChange(
                                           task._id,
                                           e.target.value,
                                         )
                                       }
-                                      className={`text-xs rounded-lg px-2 py-2 border-none outline-none cursor-pointer ${column.color} ${column.text}`}
+                                      className={`text-xs rounded-lg px-3 py-1 border-none outline-none cursor-pointer ${
+                                        task.priority === "High"
+                                          ? "bg-red-100 text-red-600"
+                                          : task.priority === "Medium"
+                                            ? "bg-yellow-100 text-yellow-600"
+                                            : "bg-green-100 text-green-600"
+                                      }`}
                                     >
                                       <option
                                         className="bg-white text-gray-400"
-                                        value="New"
+                                        value="Low"
                                       >
-                                        New
+                                        Low
                                       </option>
                                       <option
                                         className="bg-white text-gray-400"
-                                        value="Pending"
+                                        value="Medium"
                                       >
-                                        Pending
+                                        Medium
                                       </option>
                                       <option
                                         className="bg-white text-gray-400"
-                                        value="In Progress"
+                                        value="High"
                                       >
-                                        In Progress
-                                      </option>
-                                      <option
-                                        className="bg-white text-gray-400"
-                                        value="Completed"
-                                      >
-                                        Completed
+                                        High
                                       </option>
                                     </select>
+                                    <button
+                                      onClick={() => toggleEditMenu(task._id)}
+                                      className="p-1 rounded-lg border border-gray-200 hover:bg-gray-100"
+                                    >
+                                      <BsThreeDots />
+                                    </button>
+                                  </div>
+
+                                  {openMenuId === task._id && (
+                                    <div className="absolute top-11 right-5 w-32 bg-white border border-gray-300 rounded-xl shadow-lg overflow-hidden z-20">
+                                      <button
+                                        onClick={() => handleEdit(task)}
+                                        className="w-full text-sm text-left px-4 py-3 hover:bg-gray-100"
+                                      >
+                                        Edit
+                                      </button>
+
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDelete(task._id);
+                                        }}
+                                        className="w-full text-sm text-left px-4 py-3 text-red-500 hover:bg-red-100"
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  )}
+                                  <h3 className="font-semibold capitalize">
+                                    {task.title}
+                                  </h3>
+
+                                  <p className="text-[12px] font-semibold text-gray-500 mt-2 line-clamp-3">
+                                    {task.description}
+                                  </p>
+                                  <div className=" flex justify-between items-center mt-4">
+                                    <div className="flex flex-col gap-1">
+                                      <h2 className="text-gray-500 text-xs ">
+                                        Start Date
+                                      </h2>
+
+                                      <p className="text-xs font-semibold">
+                                        {new Date(
+                                          task.startDate,
+                                        ).toLocaleDateString()}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <h2 className="text-gray-500 text-xs ">
+                                        End Date
+                                      </h2>
+                                      <input
+                                        type="date"
+                                        className="text-xs w-auto font-semibold"
+                                        value={
+                                          task.dueDate?.split("T")[0] || ""
+                                        }
+                                        onChange={(e) =>
+                                          handleEditdueDate(
+                                            task._id,
+                                            e.target.value,
+                                          )
+                                        }
+                                        name="dueDate"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="flex justify-between items-end ">
+                                    <div className="flex w-full gap-1 flex-col mt-4">
+                                      <p className="text-sm font-semibold">
+                                        AssignTo:
+                                      </p>
+                                      <div className="  flex flex-wrap gap-1 items-center justify-start ">
+                                        <div className="relative flex ">
+                                          {task.assignTo
+                                            ?.slice(0, 3)
+                                            .map((user, index) => (
+                                              <img
+                                                key={user._id}
+                                                src={
+                                                  user.profilePhoto ||
+                                                  `https://ui-avatars.com/api/?name=${user.name}`
+                                                }
+                                                alt={user.name}
+                                                title={user.name}
+                                                className="w-10 h-10 rounded-full border-2 border-white object-cover -ml-5 first:ml-0"
+                                                style={{ zIndex: index + 1 }}
+                                              />
+                                            ))}
+                                          {task.assignTo?.length > 3 && (
+                                            <div className="w-5 h-5 absolute -top-1 -right-1 z-30 flex justify-center items-center text-white rounded-full text-xs -ml-6 bg-red-400">
+                                              +{task.assignTo.length - 3}
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        <div className="relative z-30">
+                                          <button
+                                            onClick={() =>
+                                              handleOpenAssignPopup(task)
+                                            }
+                                            className={`w-10 h-10 rounded-full ${column.color} border-2 border-white flex justify-center items-center -ml-5`}
+                                          >
+                                            <FiPlus
+                                              className={`text-xl ${column.text}`}
+                                            />
+                                          </button>
+
+                                          {showAssignPopup === task._id && (
+                                            <div
+                                              ref={assignUserRef}
+                                              className="absolute left-0 top-12 z-50 bg-white  border border-gray-200 rounded-lg shadow-xl p-3 w-56"
+                                            >
+                                              <h4 className="font-semibold text-sm mb-2">
+                                                Assign Users
+                                              </h4>
+
+                                              <div className="max-h-30 overflow-y-auto">
+                                                {users.map((user) => (
+                                                  <label
+                                                    key={user._id}
+                                                    className="flex items-center text-sm gap-2 py-1"
+                                                  >
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={selectedUsers.includes(
+                                                        user._id,
+                                                      )}
+                                                      onChange={() =>
+                                                        handleUserSelection(
+                                                          user._id,
+                                                        )
+                                                      }
+                                                    />
+                                                    <span>{user.name}</span>
+                                                  </label>
+                                                ))}
+                                              </div>
+
+                                              <button
+                                                onClick={() =>
+                                                  handleAssignTasksToUsers(task)
+                                                }
+                                                className="mt-2 text-sm w-full bg-blue-500 text-white py-1 rounded-lg"
+                                              >
+                                                Assign
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="w-auto flex justify-center mb-4 items-center">
+                                      <select
+                                        value={task.status}
+                                        onChange={(e) =>
+                                          handleStatusUpdate(
+                                            task._id,
+                                            e.target.value,
+                                          )
+                                        }
+                                        className={`text-xs rounded-lg px-2 py-2 border-none outline-none cursor-pointer ${column.color} ${column.text}`}
+                                      >
+                                        <option
+                                          className="bg-white text-gray-400"
+                                          value="New"
+                                        >
+                                          New
+                                        </option>
+                                        <option
+                                          className="bg-white text-gray-400"
+                                          value="Pending"
+                                        >
+                                          Pending
+                                        </option>
+                                        <option
+                                          className="bg-white text-gray-400"
+                                          value="In Progress"
+                                        >
+                                          In Progress
+                                        </option>
+                                        <option
+                                          className="bg-white text-gray-400"
+                                          value="Completed"
+                                        >
+                                          Completed
+                                        </option>
+                                      </select>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
+                              )}
+                            </Draggable>
+                          ))}
 
-                        {provided.placeholder}
+                          {provided.placeholder}
+                        </div>
+                      </div>
+                    )}
+                  </Droppable>
+                );
+              })}
+            </div>
+          </DragDropContext>
+        ) : (
+          <div className="w-full border border-gray-300 rounded-xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3  xl:grid-cols-4 h-full bg-white px-10 py-8 gap-6 ">
+            <h1 className="text-center font-bold text-4xl text-gray-400 mb-6 col-span-4">Your Tasks</h1>
+            {loggedInTasks.map((task) => (
+              <div
+                key={task._id}
+                className={`bg-white relative rounded-xl p-4 border border-gray-300 transition-all duration-200 `}
+              >
+                <div className="w-full flex justify-between items-end mb-2">
+                  <span
+                    className={`text-xs rounded-lg px-3 py-1 border-none outline-none cursor-pointer ${
+                      task.priority === "High"
+                        ? "bg-red-100 text-red-600"
+                        : task.priority === "Medium"
+                          ? "bg-yellow-100 text-yellow-600"
+                          : "bg-green-100 text-green-600"
+                    }`}
+                  >
+                    {task.priority}
+                  </span>
+                </div>
+
+                <h3 className="font-semibold capitalize">{task.title}</h3>
+
+                <p className="text-[12px] font-semibold text-gray-500 mt-2 line-clamp-3">
+                  {task.description}
+                </p>
+                <div className=" flex justify-between items-center mt-4">
+                  <div className="flex flex-col gap-1">
+                    <h2 className="text-gray-500 text-xs ">Start Date</h2>
+
+                    <p className="text-xs font-semibold">
+                      {new Date(task.startDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <h2 className="text-gray-500 text-xs ">End Date</h2>
+                    <p className="text-xs w-auto font-semibold" name="dueDate">
+                      {new Date(task.dueDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex justify-between items-end ">
+                  <div className="flex w-full gap-1 flex-col mt-4">
+                    <p className="text-sm font-semibold">AssignTo:</p>
+                    <div className="  flex flex-wrap gap-1 items-center justify-start ">
+                      <div className="relative flex ">
+                        {task.assignTo?.slice(0, 3).map((user, index) => (
+                          <img
+                            key={user._id}
+                            src={
+                              user.profilePhoto ||
+                              `https://ui-avatars.com/api/?name=${user.name}`
+                            }
+                            alt={user.name}
+                            title={user.name}
+                            className="w-10 h-10 rounded-full border-2 border-white object-cover -ml-5 first:ml-0"
+                            style={{ zIndex: index + 1 }}
+                          />
+                        ))}
+                        {task.assignTo?.length > 3 && (
+                          <div className="w-5 h-5 absolute -top-1 -right-1 z-30 flex justify-center items-center text-white rounded-full text-xs -ml-6 bg-red-400">
+                            +{task.assignTo.length - 3}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )}
-                </Droppable>
-              );
-            })}
+                  </div>
+                  <div className="w-auto flex justify-center mb-4 items-center">
+                    <span
+                      className={`text-xs rounded-lg px-2 py-2 border-none outline-none ${
+                        task.status === "New"
+                          ? "bg-green-100 text-green-700"
+                          : task.status === "Pending"
+                            ? "bg-blue-100 text-blue-700"
+                            : task.status === "In Progress"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "text-purple-700 bg-purple-100"
+                      } cursor-pointer `}
+                    >
+                      {task.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </DragDropContext>
+        )}
       </div>
     </div>
   );

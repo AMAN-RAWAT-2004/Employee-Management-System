@@ -13,11 +13,24 @@ exports.addAttendance = async (req, res) => {
       });
     }
     const attendanceDate = new Date(date);
-    const weekDay = attendanceDate.getDay();
 
-    if (weekDay === 0 || weekDay === 6) {
+    const employeeData = await User.findById(employee);
+
+    if (!employeeData) {
+      return res.status(404).json({
+        message: "Employee not found",
+      });
+    }
+
+    const dayName = attendanceDate.toLocaleDateString("en-US", {
+      weekday: "long",
+    });
+
+    const isWeeklyOff = employeeData.weeklyOffs?.includes(dayName);
+
+    if (isWeeklyOff) {
       return res.status(400).json({
-        message: "Attendance cannot be marked on weekends",
+        message: `${dayName} is a weekly off for this employee`,
       });
     }
 
@@ -188,12 +201,28 @@ exports.deleteAttendance = async (req, res) => {
   }
 };
 
-exports.getAttendanceByEmployee = async (req, res) => {
+exports.getTodayAttendanceByEmployee = async (req, res) => {
   try {
     const { employeeId } = req.params;
     const page = req.query.page ? Number(req.query.page) : null;
     const limit = req.query.limit ? Number(req.query.limit) : null;
+    const today = new Date();
 
+    const startOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+
+    const endOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      23,
+      59,
+      59,
+      999,
+    );
     const employee = await User.findById(employeeId);
     if (!employee) {
       return res.status(404).json({
@@ -205,7 +234,13 @@ exports.getAttendanceByEmployee = async (req, res) => {
       employee: employeeId,
     });
 
-    let query = Attendance.find({ employee: employeeId })
+    let query = Attendance.find({
+      employee: employeeId,
+      date: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+    })
       .populate("employee", "name email designation department")
       .sort({ date: -1 });
 
@@ -378,6 +413,17 @@ exports.getAttendanceStatistics = async (req, res) => {
 
           totalLeave: {
             $size: "$approvedLeaves",
+          },
+          totalHalfDay: {
+            $size: {
+              $filter: {
+                input: "$approvedLeaves",
+                as: "record",
+                cond: {
+                  $eq: ["$$record.leaveType", "HalfDay"],
+                },
+              },
+            },
           },
 
           totalRecords: {
@@ -572,7 +618,7 @@ exports.getMonthlyAttendance = async (req, res) => {
       role: "employee",
       status: { $ne: "Inactive" },
     })
-      .select("_id employeeId name profilePhoto")
+      .select("_id employeeId name profilePhoto weeklyOffs")
       .skip((page - 1) * limit)
       .limit(limit);
 
@@ -590,7 +636,7 @@ exports.getMonthlyAttendance = async (req, res) => {
       employee: { $in: employeeIds },
       status: "Approved",
       startDate: { $lt: endDate },
-      endDate: { $gte: startDate },
+      $or: [{ endDate: { $gte: startDate } }, { leaveType: "HalfDay" }],
     });
 
     const result = employees.map((employee) => {
@@ -598,16 +644,16 @@ exports.getMonthlyAttendance = async (req, res) => {
 
       for (let day = 1; day <= daysInMonth; day++) {
         const currentDate = new Date(year, month - 1, day);
-        const weekDay = currentDate.getDay();
 
-        if (weekDay === 0 || weekDay === 6) {
-          attendanceMap[day] = {
-            status: "Weekend",
-          };
-        } else {
-          attendanceMap[day] = null;
-        }
+        const dayName = currentDate.toLocaleDateString("en-US", {
+          weekday: "long",
+        });
+
+        const isWeeklyOff = employee.weeklyOffs?.includes(dayName);
+
+        attendanceMap[day] = isWeeklyOff ? { status: "Weekend" } : null;
       }
+
       const employeeRecords = attendanceRecords.filter(
         (record) =>
           record.employee &&
@@ -620,6 +666,17 @@ exports.getMonthlyAttendance = async (req, res) => {
 
       // Mark approved leaves
       employeeLeaves.forEach((leave) => {
+        if (leave.leaveType === "HalfDay") {
+          const day = new Date(leave.startDate).getDate();
+
+          attendanceMap[day] = {
+            status: "HalfDay",
+            leaveType: leave.leaveType,
+            leaveId: leave._id,
+          };
+
+          return;
+        }
         let currentDate = new Date(
           Math.max(leave.startDate.getTime(), startDate.getTime()),
         );
@@ -629,16 +686,28 @@ exports.getMonthlyAttendance = async (req, res) => {
         );
 
         while (currentDate <= leaveEndDate) {
-          const weekDay = currentDate.getDay();
+          const dayName = currentDate.toLocaleDateString("en-US", {
+            weekday: "long",
+          });
 
-          if (weekDay !== 0 && weekDay !== 6) {
+          const isWeeklyOff = employee.weeklyOffs?.includes(dayName);
+
+          if (!isWeeklyOff) {
             const day = currentDate.getDate();
 
-            attendanceMap[day] = {
-              status: "Leave",
-              leaveType: leave.leaveType,
-              leaveId: leave._id,
-            };
+            if (leave.leaveType === "HalfDay") {
+              attendanceMap[day] = {
+                status: "HalfDay",
+                leaveType: leave.leaveType,
+                leaveId: leave._id,
+              };
+            } else {
+              attendanceMap[day] = {
+                status: "Leave",
+                leaveType: leave.leaveType,
+                leaveId: leave._id,
+              };
+            }
           }
 
           currentDate.setDate(currentDate.getDate() + 1);
@@ -660,13 +729,23 @@ exports.getMonthlyAttendance = async (req, res) => {
       });
 
       const presentCount = employeeRecords.filter((record) => {
-        const weekDay = new Date(record.date).getDay();
-        return weekDay !== 0 && weekDay !== 6 && record.status === "Present";
+        const dayName = new Date(record.date).toLocaleDateString("en-US", {
+          weekday: "long",
+        });
+
+        return (
+          !employee.weeklyOffs?.includes(dayName) && record.status === "Present"
+        );
       }).length;
 
       const absentCount = employeeRecords.filter((record) => {
-        const weekDay = new Date(record.date).getDay();
-        return weekDay !== 0 && weekDay !== 6 && record.status === "Absent";
+        const dayName = new Date(record.date).toLocaleDateString("en-US", {
+          weekday: "long",
+        });
+
+        return (
+          !employee.weeklyOffs?.includes(dayName) && record.status === "Absent"
+        );
       }).length;
 
       let leaveCount = 0;

@@ -309,7 +309,7 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 p-5">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 p-5">
                   <div className="bg-green-50 border border-green-100 rounded-xl p-4">
                     <p className="text-sm font-semibold text-gray-500">
                       Present
@@ -344,14 +344,14 @@ const Profile = () => {
                     </h2>
                   </div>
 
-                  <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
+                  {/* <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
                     <p className="text-sm font-semibold text-gray-500">
                       Avg Hours
                     </p>
                     <h2 className="text-2xl font-bold text-purple-600">
                       {Math.ceil(statistics.averageWorkDuration) || 0}h
                     </h2>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             )}
