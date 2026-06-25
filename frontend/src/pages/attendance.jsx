@@ -13,7 +13,7 @@ import { ModalContext } from "../context/modalContext";
 import axios from "axios";
 import { toast } from "sonner";
 import { MdWeekend } from "react-icons/md";
-
+import EmployeeAttendance from "../common/employeeAttendance";
 import {
   BarChart,
   Bar,
@@ -136,7 +136,6 @@ const Attendance = () => {
             },
           },
         );
-        console.log(response.data.statistics[0]);
         setParticularStatistics(response.data.statistics[0]);
       }
       return;
@@ -188,17 +187,18 @@ const Attendance = () => {
             </div>
           </div>
 
-          <button
-            onClick={handleAttendancePopupForm}
-            className="flex justify-center items-center bg-blue-500 text-white px-4 py-2 rounded-xl gap-2 hover:bg-blue-600 w-full md:w-auto"
-          >
-            <GoPlus className="text-xl" />
-            {loggedInUser.role === "admin"
-              ? "Add Attendance"
-              : "Mark Attendance"}
-          </button>
+          {loggedInUser && loggedInUser.role === "admin" ? (
+            <button
+              onClick={handleAttendancePopupForm}
+              className="flex justify-center items-center bg-blue-500 text-white px-4 py-2 rounded-xl gap-2 hover:bg-blue-600 w-full md:w-auto"
+            >
+              <GoPlus className="text-xl" />
+              Add Attendance
+            </button>
+          ) : (
+            " "
+          )}
         </div>
-
         {loggedInUser && loggedInUser.role === "admin" ? (
           <div className="bg-white border border-gray-200 rounded-xl p-5 ">
             {/* Header */}
@@ -370,142 +370,6 @@ const Attendance = () => {
             </div>
           </div>
         ) : (
-          " "
-        )}
-        {loggedInUser && loggedInUser?.role === "admin" ? (
-          <div className=" w-full lg:w-1/2 h-full bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-800">
-                  Employee Attendance Overview
-                </h2>
-                <p className="text-sm text-gray-500">
-                  Total attendance records by employee
-                </p>
-              </div>
-              <div className="flex justify-center items-center  gap-5">
-                <select
-                  value={monthCount}
-                  onChange={(e) => setMonthCount(Number(e.target.value))}
-                  className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value={1}>January</option>
-                  <option value={2}>February</option>
-                  <option value={3}>March</option>
-                  <option value={4}>April</option>
-                  <option value={5}>May</option>
-                  <option value={6}>June</option>
-                  <option value={7}>July</option>
-                  <option value={8}>August</option>
-                  <option value={9}>September</option>
-                  <option value={10}>October</option>
-                  <option value={11}>November</option>
-                  <option value={12}>December</option>
-                </select>
-
-                <select
-                  value={yearCount}
-                  onChange={(e) => setYearCount(Number(e.target.value))}
-                  className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value={2026}>2026</option>
-                  <option value={2025}>2025</option>
-                  <option value={2024}>2024</option>
-                </select>
-              </div>
-            </div>
-
-            <ResponsiveContainer width="100%" height={450}>
-              <BarChart
-                data={statistics}
-                margin={{
-                  top: 40,
-                  right: 0,
-                  left: 0,
-                  bottom: 60,
-                }}
-              >
-                <CartesianGrid
-                  vertical={false}
-                  stroke="#f1f5f9"
-                  strokeDasharray="3 3"
-                />
-
-                <XAxis
-                  dataKey="employeeName"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12 }}
-                />
-
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12 }}
-                />
-
-                <Tooltip
-                  cursor={{ fill: "rgba(59,130,246,0.08)" }}
-                  content={({ active, payload }) => {
-                    if (active && payload?.length) {
-                      const employee = payload[0].payload;
-
-                      return (
-                        <div className="bg-white rounded-2xl  shadow-xl p-4">
-                          <div className="flex items-center gap-3 mb-3">
-                            <img
-                              src={employee.employeePhoto}
-                              alt=""
-                              className="w-12 h-12 rounded-full object-cover"
-                            />
-                            <div>
-                              <h3 className="font-semibold">
-                                {employee.employeeName}
-                              </h3>
-                              <p className="text-xs text-gray-500">
-                                {employee.employeeEmail}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="space-y-0.5 text-xs">
-                            <p>Present: {employee.totalPresent}</p>
-                            <p>Absent: {employee.totalAbsent}</p>
-                            <p>Leave: {employee.totalLeave}</p>
-                            <p>HalfDay: {employee.totalHalfDay}</p>
-                            <p>Records: {employee.totalRecords}</p>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return null;
-                  }}
-                />
-
-                <Bar
-                  dataKey="totalRecords"
-                  radius={[12, 12, 0, 0]}
-                  maxBarSize={40}
-                >
-                  {statistics.map((entry, index) => (
-                    <Cell key={index} fill={colors[index % colors.length]} />
-                  ))}
-
-                  <LabelList
-                    dataKey="totalRecords"
-                    position="top"
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      fill: "#374151",
-                    }}
-                  />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        ) : (
           <div className="w-full flex flex-col xl:flex-row gap-6">
             {/* Statistics Card */}
             <div className="flex-1">
@@ -607,45 +471,181 @@ const Attendance = () => {
                   Attendance Distribution
                 </h3>
 
-                <div className="w-full h-[280px]">
+                <div className="w-full flex-1 h-[280px] justify-center items-center min-w-0">
                   {totalAttendance === 0 ? (
                     <div className="h-full flex items-center justify-center text-gray-500">
                       No attendance data available
                     </div>
                   ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={chartData}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          label={({ value }) =>
-                            `${((value / totalDays) * 100).toFixed(0)}%`
-                          }
-                        >
-                          <Cell fill="#3C83F6" />
-                          <Cell fill="#ef4444" />
-                          <Cell fill="#f59e0b" />
-                        </Pie>
+                    <PieChart width="100%" height="100%">
+                      <Pie
+                        data={chartData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label={({ value }) =>
+                          `${((value / totalDays) * 100).toFixed(0)}%`
+                        }
+                      >
+                        <Cell fill="#3C83F6" />
+                        <Cell fill="#ef4444" />
+                        <Cell fill="#f59e0b" />
+                      </Pie>
 
-                        <Tooltip
-                          formatter={(value, name) => [
-                            `${value} (${((value / totalDays) * 100).toFixed(1)}%)`,
-                            name,
-                          ]}
-                        />
+                      <Tooltip
+                        formatter={(value, name) => [
+                          `${value} (${((value / totalDays) * 100).toFixed(1)}%)`,
+                          name,
+                        ]}
+                      />
 
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
+                      <Legend />
+                    </PieChart>
                   )}
                 </div>
               </div>
             </div>
           </div>
+        )}
+
+        {loggedInUser && loggedInUser?.role === "admin" ? (
+          <div className=" w-full lg:w-1/2  bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Employee Attendance Overview
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Total attendance records by employee
+                </p>
+              </div>
+              <div className="flex justify-center items-center  gap-5">
+                <select
+                  value={monthCount}
+                  onChange={(e) => setMonthCount(Number(e.target.value))}
+                  className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={1}>January</option>
+                  <option value={2}>February</option>
+                  <option value={3}>March</option>
+                  <option value={4}>April</option>
+                  <option value={5}>May</option>
+                  <option value={6}>June</option>
+                  <option value={7}>July</option>
+                  <option value={8}>August</option>
+                  <option value={9}>September</option>
+                  <option value={10}>October</option>
+                  <option value={11}>November</option>
+                  <option value={12}>December</option>
+                </select>
+
+                <select
+                  value={yearCount}
+                  onChange={(e) => setYearCount(Number(e.target.value))}
+                  className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={2026}>2026</option>
+                  <option value={2025}>2025</option>
+                  <option value={2024}>2024</option>
+                </select>
+              </div>
+            </div>
+            <div className="h-[450px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={statistics}
+                  margin={{
+                    top: 40,
+                    right: 0,
+                    left: 0,
+                    bottom: 60,
+                  }}
+                >
+                  <CartesianGrid
+                    vertical={false}
+                    stroke="#f1f5f9"
+                    strokeDasharray="3 3"
+                  />
+
+                  <XAxis
+                    dataKey="employeeName"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12 }}
+                  />
+
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12 }}
+                  />
+
+                  <Tooltip
+                    cursor={{ fill: "rgba(59,130,246,0.08)" }}
+                    content={({ active, payload }) => {
+                      if (active && payload?.length) {
+                        const employee = payload[0].payload;
+
+                        return (
+                          <div className="bg-white rounded-2xl  shadow-xl p-4">
+                            <div className="flex items-center gap-3 mb-3">
+                              <img
+                                src={employee.employeePhoto}
+                                alt=""
+                                className="w-12 h-12 rounded-full object-cover"
+                              />
+                              <div>
+                                <h3 className="font-semibold">
+                                  {employee.employeeName}
+                                </h3>
+                                <p className="text-xs text-gray-500">
+                                  {employee.employeeEmail}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="space-y-0.5 text-xs">
+                              <p>Present: {employee.totalPresent}</p>
+                              <p>Absent: {employee.totalAbsent}</p>
+                              <p>Leave: {employee.totalLeave}</p>
+                              <p>HalfDay: {employee.totalHalfDay}</p>
+                              <p>Records: {employee.totalRecords}</p>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return null;
+                    }}
+                  />
+
+                  <Bar
+                    dataKey="totalRecords"
+                    radius={[12, 12, 0, 0]}
+                    maxBarSize={40}
+                  >
+                    {statistics.map((entry, index) => (
+                      <Cell key={index} fill={colors[index % colors.length]} />
+                    ))}
+
+                    <LabelList
+                      dataKey="totalRecords"
+                      position="top"
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        fill: "#374151",
+                      }}
+                    />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        ) : (
+          <EmployeeAttendance />
         )}
       </div>
     </div>

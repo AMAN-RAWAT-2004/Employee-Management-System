@@ -3,19 +3,8 @@ import React, { useContext, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ModalContext } from "../context/modalContext";
 import { toast } from "sonner";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  Legend,
-} from "recharts";
 const Profile = () => {
   const [user, setUser] = useState({});
-  const [statistics, setStatistics] = useState(null);
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [month, setMonth] = useState(new Date().getMonth() + 1);
   const { id } = useParams();
   const token = localStorage.getItem("token");
   const { dark } = useContext(ModalContext);
@@ -36,46 +25,10 @@ const Profile = () => {
       toast.error(error?.response?.data?.message);
     }
   };
-  const fetchStatistics = async () => {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/v1/attendance/statistics?employeeId=${id}&month=${month}&year=${year}`,
-        {
-          headers: {
-            authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      setStatistics(response.data.statistics[0]);
-    } catch (error) {
-      console.log(error);
-      toast.error(error?.response?.data?.message);
-    }
-  };
 
   useEffect(() => {
     fetchUserDetails();
-    fetchStatistics();
-  }, [id, month, year]);
-
-  const totalDays = new Date(year, month, 0).getDate();
-
-  const chartData = [
-    {
-      name: "Present",
-      value: statistics?.totalPresent || 0,
-    },
-    {
-      name: "Absent",
-      value: statistics?.totalAbsent || 0,
-    },
-    {
-      name: "Leave",
-      value: statistics?.totalLeave || 0,
-    },
-  ];
-
-  const totalAttendance = chartData.reduce((sum, item) => sum + item.value, 0);
+  }, [id]);
 
   return (
     <div
@@ -265,140 +218,6 @@ const Profile = () => {
                   </span>
                   <p className="text-sm font-semibold">{user.address || "-"}</p>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="w-full flex flex-col xl:flex-row gap-6">
-          {/* Statistics Card */}
-          <div className="flex-1">
-            {statistics && (
-              <div className="w-full border border-gray-300 rounded-xl min-h-92.5 bg-white shadow-sm">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-300 px-5 py-4">
-                  <p className="font-semibold text-lg">Attendance Statistics</p>
-
-                  <div className="flex flex-wrap gap-3">
-                    <select
-                      value={month}
-                      onChange={(e) => setMonth(Number(e.target.value))}
-                      className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value={1}>January</option>
-                      <option value={2}>February</option>
-                      <option value={3}>March</option>
-                      <option value={4}>April</option>
-                      <option value={5}>May</option>
-                      <option value={6}>June</option>
-                      <option value={7}>July</option>
-                      <option value={8}>August</option>
-                      <option value={9}>September</option>
-                      <option value={10}>October</option>
-                      <option value={11}>November</option>
-                      <option value={12}>December</option>
-                    </select>
-
-                    <select
-                      value={year}
-                      onChange={(e) => setYear(Number(e.target.value))}
-                      className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value={2026}>2026</option>
-                      <option value={2025}>2025</option>
-                      <option value={2024}>2024</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 p-5">
-                  <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-                    <p className="text-sm font-semibold text-gray-500">
-                      Present
-                    </p>
-                    <h2 className="text-2xl font-bold text-green-600">
-                      {statistics.totalPresent}
-                    </h2>
-                  </div>
-
-                  <div className="bg-red-50 border border-red-100 rounded-xl p-4">
-                    <p className="text-sm font-semibold text-gray-500">
-                      Absent
-                    </p>
-                    <h2 className="text-2xl font-bold text-red-600">
-                      {statistics.totalAbsent}
-                    </h2>
-                  </div>
-
-                  <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-4">
-                    <p className="text-sm font-semibold text-gray-500">Leave</p>
-                    <h2 className="text-2xl font-bold text-yellow-600">
-                      {statistics.totalLeave}
-                    </h2>
-                  </div>
-
-                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-                    <p className="text-sm font-semibold text-gray-500">
-                      Records
-                    </p>
-                    <h2 className="text-2xl font-bold text-blue-600">
-                      {statistics.totalRecords}
-                    </h2>
-                  </div>
-
-                  {/* <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
-                    <p className="text-sm font-semibold text-gray-500">
-                      Avg Hours
-                    </p>
-                    <h2 className="text-2xl font-bold text-purple-600">
-                      {Math.ceil(statistics.averageWorkDuration) || 0}h
-                    </h2>
-                  </div> */}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Pie Chart */}
-          <div className="w-full xl:w-[420px] shrink-0">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm h-full">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                Attendance Distribution
-              </h3>
-
-              <div className="w-full h-[280px]">
-                {totalAttendance === 0 ? (
-                  <div className="h-full flex items-center justify-center text-gray-500">
-                    No attendance data available
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={chartData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        label={({ value }) =>
-                          `${((value / totalDays) * 100).toFixed(0)}%`
-                        }
-                      >
-                        <Cell fill="#3C83F6" />
-                        <Cell fill="#ef4444" />
-                        <Cell fill="#f59e0b" />
-                      </Pie>
-
-                      <Tooltip
-                        formatter={(value, name) => [
-                          `${value} (${((value / totalDays) * 100).toFixed(1)}%)`,
-                          name,
-                        ]}
-                      />
-
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
               </div>
             </div>
           </div>

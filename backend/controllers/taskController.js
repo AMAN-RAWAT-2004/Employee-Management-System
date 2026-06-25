@@ -278,22 +278,21 @@ exports.updateTasksPriority = async (req, res) => {
   }
 };
 
-exports.fetchTaskByEmployeeId = async (req, res) => {
+exports.getMyTasks = async (req, res) => {
   try {
-    const  {id}  = req.user;
-    const totalTasks=await Task.countDocuments({ assignTo: id })
+    const { id } = req.user;
+    const totalTasks = await Task.countDocuments({ assignTo: id });
     const tasks = await Task.find({ assignTo: id })
       .sort({ createdAt: -1 })
-      .populate("assignTo", "name email profilePhoto");
+      .populate("assignTo createdBy", "name email profilePhoto");
     if (!tasks) {
       return res.status(404).json({
         Error: "Tasks Not Found",
       });
     }
-    res.status(200).json({totalTasks,tasks});
-
+    res.status(200).json({ totalTasks, tasks });
   } catch (error) {
-     res.status(500).json({
+    res.status(500).json({
       message: "Server Error",
       error: error.message,
     });

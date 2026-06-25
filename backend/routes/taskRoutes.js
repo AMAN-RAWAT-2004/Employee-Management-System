@@ -1,25 +1,16 @@
 const express = require("express");
 const router = express.Router();
 const taskController = require("./../controllers/taskController");
-const authMiddleware = require("./../middlewares/authMiddleware");
+const { protect, admin } = require("./../middlewares/authMiddleware");
 
-router.get(
-  "/logged-In/tasks",
-  authMiddleware.protect,
-  taskController.fetchTaskByEmployeeId,
-);
+router.get("/my-tasks", protect, taskController.getMyTasks);
+router.patch("/:taskId/status",protect, taskController.updateTaskStatus);
 
-router.use(authMiddleware.protect, authMiddleware.admin);
+router.use(protect, admin);
 router.post("/:taskId/assign", taskController.assignTask);
-router.patch("/:taskId/status", taskController.updateTaskStatus);
 router.patch("/:taskId/due-date", taskController.updateDueDate);
 router.patch("/:taskId/priority", taskController.updateTasksPriority);
-router.post(
-  "/",
-  authMiddleware.protect,
-  authMiddleware.admin,
-  taskController.addTasks,
-);
+router.post("/", taskController.addTasks);
 router.route("/").get(taskController.fetchAllTasks);
 router
   .route("/:taskId")

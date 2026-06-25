@@ -6,8 +6,12 @@ const authMiddleware = require("./../middlewares/authMiddleware");
 router.post(
   "/add-attendance",
   authMiddleware.protect,
-
   attendanceController.addAttendance,
+);
+router.patch(
+  "/resume/:attendanceId",
+  // authMiddleware.protect,
+  attendanceController.resumeAttendance,
 );
 router.get(
   "/monthly/:year/:month",
@@ -18,17 +22,9 @@ router.get(
 
 router.post("/check-in", authMiddleware.protect, attendanceController.checkIn);
 
-router.post(
-  "/check-out",
-  authMiddleware.protect,
-  attendanceController.checkOut,
-);
+router.put("/check-out", authMiddleware.protect, attendanceController.checkOut);
 
-router.get(
-  "/statistics",
-
-  attendanceController.getAttendanceStatistics,
-);
+router.get("/statistics", attendanceController.getAttendanceStatistics);
 
 router.get(
   "/employee/:employeeId/date-range",
@@ -37,9 +33,9 @@ router.get(
 );
 
 router.get(
-  "/employee/:employeeId",
+  "/today",
   authMiddleware.protect,
-  attendanceController.getTodayAttendanceByEmployee,
+  attendanceController.getTodayAttendance,
 );
 
 router

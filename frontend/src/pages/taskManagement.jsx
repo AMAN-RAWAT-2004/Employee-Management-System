@@ -137,18 +137,24 @@ const TaskManagement = () => {
 
     const newStatus = destination.droppableId;
 
-    const updatedTasks = tasks.map((task) =>
-      task._id === draggableId ? { ...task, status: newStatus } : task,
-    );
-
-    setTasks(updatedTasks);
+    if (loggedInUser.role === "admin") {
+      setTasks((prev) =>
+        prev.map((task) =>
+          task._id === draggableId ? { ...task, status: newStatus } : task,
+        ),
+      );
+    } else {
+      setLoggedInTasks((prev) =>
+        prev.map((task) =>
+          task._id === draggableId ? { ...task, status: newStatus } : task,
+        ),
+      );
+    }
 
     try {
       await axios.patch(
         `${import.meta.env.VITE_BACKEND_URL}/api/v1/tasks/${draggableId}/status`,
-        {
-          status: newStatus,
-        },
+        { status: newStatus },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -156,10 +162,13 @@ const TaskManagement = () => {
         },
       );
     } catch (error) {
-      console.log(error);
       toast.error(error?.response?.data?.message);
 
-      fetchTasks();
+      if (loggedInUser.role === "admin") {
+        fetchTasks();
+      } else {
+        loggedInUserTasks();
+      }
     }
   };
   const handleOpenAddTaskForm = () => {
@@ -299,6 +308,11 @@ const TaskManagement = () => {
         {
           status,
         },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
 
       setRefreshEmployee((prev) => !prev);
@@ -309,19 +323,20 @@ const TaskManagement = () => {
   const filteredTasks = tasks.filter((task) =>
     task?.title?.toLowerCase()?.includes(search?.toLowerCase()),
   );
-
+  const filteredMyTasks = loggedInTasks.filter((task) =>
+    task?.title?.toLowerCase()?.includes(search?.toLowerCase()),
+  );
   const loggedInUserTasks = async () => {
     try {
       if (loggedInUser.role === "employee") {
         const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/v1/tasks/logged-In/tasks`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/v1/tasks/my-tasks`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           },
         );
-        // console.log(response.data.tasks);
         setLoggedInTasks(response.data.tasks);
       }
       return;
@@ -363,7 +378,6 @@ const TaskManagement = () => {
           )}
         </div>
         {/* Search Bar */}
-
         <div
           className={`rounded-2xl p-4 border shadow-sm transition-colors duration-200 ${
             dark ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
@@ -397,6 +411,7 @@ const TaskManagement = () => {
             </div>
           </div>
         </div>
+
         {loggedInUser && loggedInUser?.role === "admin" ? (
           <DragDropContext onDragEnd={handleDragEnd}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -689,92 +704,153 @@ const TaskManagement = () => {
             </div>
           </DragDropContext>
         ) : (
-          <div className="w-full border border-gray-300 rounded-xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3  xl:grid-cols-4 h-full bg-white px-10 py-8 gap-6 ">
-            <h1 className="text-center font-bold text-4xl text-gray-400 mb-6 col-span-4">Your Tasks</h1>
-            {loggedInTasks.map((task) => (
-              <div
-                key={task._id}
-                className={`bg-white relative rounded-xl p-4 border border-gray-300 transition-all duration-200 `}
-              >
-                <div className="w-full flex justify-between items-end mb-2">
-                  <span
-                    className={`text-xs rounded-lg px-3 py-1 border-none outline-none cursor-pointer ${
-                      task.priority === "High"
-                        ? "bg-red-100 text-red-600"
-                        : task.priority === "Medium"
-                          ? "bg-yellow-100 text-yellow-600"
-                          : "bg-green-100 text-green-600"
-                    }`}
-                  >
-                    {task.priority}
-                  </span>
-                </div>
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {columns.map((column) => {
+                const columnTasks = filteredMyTasks.filter(
+                  (task) => task.status === column.id,
+                );
 
-                <h3 className="font-semibold capitalize">{task.title}</h3>
+                return (
+                  <Droppable droppableId={column.id} key={column.id}>
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`${column.color} border-t-3 ${column.border} rounded-xl p-4 min-h-175`}
+                      >
+                        <div className="flex justify-between items-center mb-4">
+                          <h2 className="font-semibold text-lg">
+                            {column.title}
+                          </h2>
 
-                <p className="text-[12px] font-semibold text-gray-500 mt-2 line-clamp-3">
-                  {task.description}
-                </p>
-                <div className=" flex justify-between items-center mt-4">
-                  <div className="flex flex-col gap-1">
-                    <h2 className="text-gray-500 text-xs ">Start Date</h2>
+                          <span
+                            className={`${column.bg} text-white px-3 py-1.5 rounded-full text-sm`}
+                          >
+                            {columnTasks.length}
+                          </span>
+                        </div>
 
-                    <p className="text-xs font-semibold">
-                      {new Date(task.startDate).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <h2 className="text-gray-500 text-xs ">End Date</h2>
-                    <p className="text-xs w-auto font-semibold" name="dueDate">
-                      {new Date(task.dueDate).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex justify-between items-end ">
-                  <div className="flex w-full gap-1 flex-col mt-4">
-                    <p className="text-sm font-semibold">AssignTo:</p>
-                    <div className="  flex flex-wrap gap-1 items-center justify-start ">
-                      <div className="relative flex ">
-                        {task.assignTo?.slice(0, 3).map((user, index) => (
-                          <img
-                            key={user._id}
-                            src={
-                              user.profilePhoto ||
-                              `https://ui-avatars.com/api/?name=${user.name}`
-                            }
-                            alt={user.name}
-                            title={user.name}
-                            className="w-10 h-10 rounded-full border-2 border-white object-cover -ml-5 first:ml-0"
-                            style={{ zIndex: index + 1 }}
-                          />
-                        ))}
-                        {task.assignTo?.length > 3 && (
-                          <div className="w-5 h-5 absolute -top-1 -right-1 z-30 flex justify-center items-center text-white rounded-full text-xs -ml-6 bg-red-400">
-                            +{task.assignTo.length - 3}
-                          </div>
-                        )}
+                        <div className="space-y-5">
+                          {columnTasks.map((task, index) => (
+                            <Draggable
+                              key={task._id}
+                              draggableId={task._id}
+                              index={index}
+                            >
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`bg-white relative rounded-xl p-4 border border-gray-100 transition-all duration-200 ${
+                                    snapshot.isDragging
+                                      ? "shadow-2xl rotate-2"
+                                      : "shadow-sm hover:shadow-md  "
+                                  }`}
+                                >
+                                  <div
+                                    ref={
+                                      openMenuId === task._id ? menuRef : null
+                                    }
+                                    className="w-full flex justify-between items-end mb-2"
+                                  >
+                                    <p
+                                      className={`text-xs rounded-lg px-3 py-1 border-none outline-none cursor-pointer ${
+                                        task.priority === "High"
+                                          ? "bg-red-100 text-red-600"
+                                          : task.priority === "Medium"
+                                            ? "bg-yellow-100 text-yellow-600"
+                                            : "bg-green-100 text-green-600"
+                                      }`}
+                                    >
+                                      {task.priority}
+                                    </p>
+                                  </div>
+
+                                  <h3 className="font-semibold capitalize">
+                                    {task.title}
+                                  </h3>
+
+                                  <p className="text-[12px] font-semibold text-gray-500 mt-2 line-clamp-3">
+                                    {task.description}
+                                  </p>
+                                  <div className=" flex justify-between items-center mt-4">
+                                    <div className="flex flex-col gap-1">
+                                      <h2 className="text-gray-500 text-xs ">
+                                        Assigned At
+                                      </h2>
+
+                                      <p className="text-xs font-semibold">
+                                        {new Date(
+                                          task.startDate,
+                                        ).toLocaleDateString()}
+                                      </p>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                      <h2 className="text-gray-500 text-xs ">
+                                        Deadline
+                                      </h2>
+
+                                      <p className="text-xs font-semibold">
+                                        {new Date(
+                                          task.dueDate,
+                                        ).toLocaleDateString()}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex justify-between items-end ">
+                                    <div className="flex w-full gap-1 flex-col mt-4">
+                                      <p className="text-sm font-semibold">
+                                        AssignTo:
+                                      </p>
+                                      <div className="  flex flex-wrap gap-1 items-center justify-start ">
+                                        <div className="relative flex ">
+                                          {task.assignTo
+                                            ?.slice(0, 3)
+                                            .map((user, index) => (
+                                              <img
+                                                key={user._id}
+                                                src={
+                                                  user.profilePhoto ||
+                                                  `https://ui-avatars.com/api/?name=${user.name}`
+                                                }
+                                                alt={user.name}
+                                                title={user.name}
+                                                className="w-10 h-10 rounded-full border-2 border-white object-cover -ml-5 first:ml-0"
+                                                style={{ zIndex: index + 1 }}
+                                              />
+                                            ))}
+                                          {task.assignTo?.length > 3 && (
+                                            <div className="w-5 h-5 absolute -top-1 -right-1 z-30 flex justify-center items-center text-white rounded-full text-xs -ml-6 bg-red-400">
+                                              +{task.assignTo.length - 3}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="w-auto flex justify-center mb-4 items-center">
+                                      <p
+                                        className={`text-xs rounded-lg px-2 py-2 border-none whitespace-nowrap outline-none cursor-pointer ${column.color} ${column.text}`}
+                                      >
+                                        {task.status}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+
+                          {provided.placeholder}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <div className="w-auto flex justify-center mb-4 items-center">
-                    <span
-                      className={`text-xs rounded-lg px-2 py-2 border-none outline-none ${
-                        task.status === "New"
-                          ? "bg-green-100 text-green-700"
-                          : task.status === "Pending"
-                            ? "bg-blue-100 text-blue-700"
-                            : task.status === "In Progress"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "text-purple-700 bg-purple-100"
-                      } cursor-pointer `}
-                    >
-                      {task.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                    )}
+                  </Droppable>
+                );
+              })}
+            </div>
+          </DragDropContext>
         )}
       </div>
     </div>

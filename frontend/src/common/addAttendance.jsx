@@ -7,39 +7,31 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 
 const AddAttendance = () => {
-  const {
-    loggedInUser,
-    setOpenAddAttendanceForm,
-    refreshAttendance,
-    setRefreshAttendance,
-  } = useContext(ModalContext);
+  const { setOpenAddAttendanceForm, refreshAttendance, setRefreshAttendance } =
+    useContext(ModalContext);
   const token = localStorage.getItem("token");
   const [employees, setEmployees] = useState([]);
   const formRef = useRef(null);
   const [formData, setFormData] = useState({
-    employee: loggedInUser?.role === "admin" ? "" : loggedInUser?._id,
+    employee: "",
     date: "",
     checkIn: "",
     checkOut: "",
     status: "Present",
     leaveType: "",
   });
-  const today = new Date().toISOString().split("T")[0];
   const fetchEmployees = async () => {
     try {
-      if (loggedInUser.role === "admin") {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/v1/employee`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/v1/employee`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        );
+        },
+      );
 
-        setEmployees(response.data.employees);
-      }
-      return;
+      setEmployees(response.data.employees);
     } catch (error) {
       //   console.log(error);
       toast.error(error?.response?.data?.message);
@@ -62,11 +54,6 @@ const AddAttendance = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (loggedInUser?.role !== "admin" && formData.date !== today) {
-      toast.error("You can only mark attendance for today");
-      return;
-    }
 
     const attendanceData = {
       employee: formData.employee,
@@ -114,16 +101,6 @@ const AddAttendance = () => {
     };
   }, [setOpenAddAttendanceForm]);
 
-  useEffect(() => {
-    if (loggedInUser && loggedInUser.role !== "admin") {
-      setFormData((prev) => ({
-        ...prev,
-        employee: loggedInUser._id,
-        date: today,
-      }));
-    }
-  }, [loggedInUser]);
-
   return (
     <div
       ref={formRef}
@@ -135,51 +112,35 @@ const AddAttendance = () => {
         {/* Employee ID */}
         <div>
           <label className="block text-sm font-medium mb-2">Employee</label>
-          {loggedInUser && loggedInUser.role === "admin" ? (
-            <select
-              name="employee"
-              value={formData.employee}
-              onChange={handleChange}
-              required
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            >
-              <option value="">Select Employee</option>
 
-              {employees.map((employee) => (
-                <option key={employee._id} value={employee._id}>
-                  {employee.name}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input
-              type="text"
-              value={loggedInUser?.name || ""}
-              disabled
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-100 cursor-not-allowed"
-            />
-          )}
+          <select
+            name="employee"
+            value={formData.employee}
+            onChange={handleChange}
+            required
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            <option value="">Select Employee</option>
+
+            {employees.map((employee) => (
+              <option key={employee._id} value={employee._id}>
+                {employee.name}
+              </option>
+            ))}
+          </select>
         </div>
         {/* Date */}
         <div>
           <label className="block text-sm font-medium mb-2">Date</label>
-          {loggedInUser?.role === "admin" ? (
-            <input
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-              required
-            />
-          ) : (
-            <input
-              type="date"
-              value={today}
-              disabled
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 cursor-not-allowed"
-            />
-          )}
+
+          <input
+            type="date"
+            name="date"
+            value={formData.date}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            required
+          />
         </div>
 
         {/* Check In & Check Out */}
@@ -208,6 +169,7 @@ const AddAttendance = () => {
         </div>
 
         {/* Status */}
+
         <div>
           <label className="block text-sm font-medium mb-2">Status</label>
           <select

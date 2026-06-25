@@ -201,78 +201,6 @@ exports.deleteAttendance = async (req, res) => {
   }
 };
 
-exports.getTodayAttendanceByEmployee = async (req, res) => {
-  try {
-    const { employeeId } = req.params;
-    const page = req.query.page ? Number(req.query.page) : null;
-    const limit = req.query.limit ? Number(req.query.limit) : null;
-    const today = new Date();
-
-    const startOfDay = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
-    );
-
-    const endOfDay = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
-      23,
-      59,
-      59,
-      999,
-    );
-    const employee = await User.findById(employeeId);
-    if (!employee) {
-      return res.status(404).json({
-        message: "Employee not found",
-      });
-    }
-
-    const totalRecords = await Attendance.countDocuments({
-      employee: employeeId,
-    });
-
-    let query = Attendance.find({
-      employee: employeeId,
-      date: {
-        $gte: startOfDay,
-        $lte: endOfDay,
-      },
-    })
-      .populate("employee", "name email designation department")
-      .sort({ date: -1 });
-
-    if (page && limit) {
-      const skip = (page - 1) * limit;
-      query = query.skip(skip).limit(limit);
-    }
-
-    const attendance = await query;
-
-    res.status(200).json({
-      totalRecords,
-      attendance,
-      pagination:
-        page && limit
-          ? {
-              totalRecords,
-              currentPage: page,
-              totalPages: Math.ceil(totalRecords / limit),
-              limit,
-              hasNextPage: page < Math.ceil(totalRecords / limit),
-              hasPrevPage: page > 1,
-            }
-          : null,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-};
-
 exports.getAttendanceByDateRange = async (req, res) => {
   try {
     const { employeeId } = req.params;
@@ -465,124 +393,190 @@ exports.getAttendanceStatistics = async (req, res) => {
 
 exports.checkIn = async (req, res) => {
   try {
-    const { employeeId, checkInTime } = req.body;
+    const employeeId = req.user.id;
 
-    if (!employeeId || !checkInTime) {
-      return res.status(400).json({
-        message: "Employee ID and check-in time are required",
-      });
-    }
+    const now = new Date();
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const startOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+
+    const endOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      23,
+      59,
+      59,
+      999,
+    );
+
+    const checkInTime = now.toTimeString().split(" ")[0];
 
     let attendance = await Attendance.findOne({
       employee: employeeId,
-      date: today,
+      date: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
     });
+
+    if (attendance && attendance.checkIn) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already checked in today.",
+      });
+    }
 
     if (!attendance) {
       attendance = await Attendance.create({
         employee: employeeId,
-        date: today,
+        date: startOfDay,
         checkIn: checkInTime,
         status: "Present",
       });
-    } else if (!attendance.checkIn) {
+    } else {
       attendance.checkIn = checkInTime;
       attendance.status = "Present";
       await attendance.save();
-    } else {
-      return res.status(409).json({
-        message: "Employee already checked in today",
-      });
     }
 
-    const populatedAttendance = await attendance.populate(
-      "employee",
-      "name email designation department",
-    );
+    await attendance.populate("employee", "name email designation department");
 
-    res.status(200).json({
-      message: "Check-in successful",
-      attendance: populatedAttendance,
+    return res.status(200).json({
+      success: true,
+      message: "Checked in successfully.",
+      attendance,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
+      success: false,
       message: error.message,
     });
   }
 };
-
 exports.checkOut = async (req, res) => {
   try {
-    const { employeeId, checkOutTime } = req.body;
+    const employeeId = req.user.id;
 
-    if (!employeeId || !checkOutTime) {
-      return res.status(400).json({
-        message: "Employee ID and check-out time are required",
-      });
-    }
+    const now = new Date();
 
-    // Get today's attendance record
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const startOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+
+    const endOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      23,
+      59,
+      59,
+      999,
+    );
 
     const attendance = await Attendance.findOne({
       employee: employeeId,
-      date: today,
+      date: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
     });
 
     if (!attendance) {
       return res.status(404).json({
-        message: "No check-in record found for today",
+        success: false,
+        message: "You haven't checked in today.",
       });
     }
 
     if (!attendance.checkIn) {
       return res.status(400).json({
-        message: "Employee has not checked in yet",
+        success: false,
+        message: "Please check in first.",
       });
     }
 
     if (attendance.checkOut) {
       return res.status(409).json({
-        message: "Employee already checked out today",
+        success: false,
+        message: "You have already checked out today.",
       });
     }
+    attendance.checkOut = now.toTimeString().split(" ")[0];
 
-    // Save checkout time
-    attendance.checkOut = checkOutTime;
+    const checkInTime = new Date(`1970-01-01T${attendance.checkIn}`);
+    const checkOutTime = new Date(`1970-01-01T${attendance.checkOut}`);
 
-    // Calculate work duration in minutes
-    const checkInDateTime = new Date(`2000-01-01T${attendance.checkIn}:00`);
+    let workDuration = Math.floor((checkOutTime - checkInTime) / (1000 * 60));
 
-    const checkOutDateTime = new Date(`2000-01-01T${checkOutTime}:00`);
+    if (workDuration < 0) {
+      workDuration += 24 * 60;
+    }
 
-    const durationInMinutes = Math.floor(
-      (checkOutDateTime - checkInDateTime) / (1000 * 60),
-    );
-
-    attendance.workDuration = durationInMinutes > 0 ? durationInMinutes : 0;
+    attendance.workDuration = workDuration;
 
     await attendance.save();
 
-    const populatedAttendance = await attendance.populate(
-      "employee",
-      "name email designation department",
-    );
+    await attendance.populate("employee", "name email designation department");
 
     res.status(200).json({
-      message: "Check-out successful",
-      attendance: populatedAttendance,
+      success: true,
+      message: "Checked out successfully.",
+      attendance,
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
       message: error.message,
     });
   }
 };
+exports.getTodayAttendance = async (req, res) => {
+  try {
+    const employeeId = req.user.id;
 
+    const today = new Date();
+
+    const startOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+
+    const endOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      23,
+      59,
+      59,
+      999,
+    );
+
+    const attendance = await Attendance.findOne({
+      employee: employeeId,
+      date: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+    }).populate("employee", "name email designation department profileImage");
+
+    res.status(200).json({
+      success: true,
+      attendance,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 exports.getMonthlyAttendance = async (req, res) => {
   try {
     const { year, month } = req.params;
@@ -789,6 +783,41 @@ exports.getMonthlyAttendance = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+exports.resumeAttendance = async (req, res) => {
+  try {
+    const attendanceId = req.params.attendanceId;
+    const attendance = await Attendance.findById(attendanceId);
+
+    if (!attendance) {
+      return res.status(404).json({
+        success: false,
+        message: "Attendance not found",
+      });
+    }
+
+    if (!attendance.checkOut) {
+      return res.status(400).json({
+        success: false,
+        message: "Attendance is already active",
+      });
+    }
+
+    attendance.checkOut = null;
+    attendance.workDuration = 0; // or null
+
+    await attendance.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Attendance resumed successfully",
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message,
     });
   }
 };
