@@ -20,6 +20,7 @@ const TaskManagement = () => {
     setEditingTask,
     loggedInUser,
   } = useContext(ModalContext);
+  const token = localStorage.getItem("token");
   const [isTaskBarOpen, setIsTaskBarOpen] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [loggedInTasks, setLoggedInTasks] = useState([]);
@@ -29,11 +30,22 @@ const TaskManagement = () => {
   const [users, setUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [dueDate, setDueDate] = useState("");
-  const token = localStorage.getItem("token");
   const [comment, setComment] = useState("");
-  const menuRef = useRef(null);
   const [search, setSearch] = useState("");
+  const [showMembers, setShowMembers] = useState(false);
+  const [searchMember, setSearchMember] = useState("");
+  const menuRef = useRef(null);
   const assignUserRef = useRef(null);
+
+  // Filter Assigned Members In TaskDetails Bar
+  const filteredMembers =
+    selectedTask?.assignTo?.filter(
+      (user) =>
+        user.name.toLowerCase().includes(searchMember.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchMember.toLowerCase()),
+    ) || [];
+
+  // Fetch Tasks Api Calls Function
   const fetchTasks = async () => {
     try {
       if (loggedInUser.role === "admin") {
@@ -52,15 +64,21 @@ const TaskManagement = () => {
       toast.error(error?.response?.data?.message);
     }
   };
+  // Calling Fetch Tasks Function
+
   useEffect(() => {
     fetchTasks();
     loggedInUserTasks();
   }, [refreshEmployee, token, loggedInUser]);
 
+  //  Handle Edit Function
   const handleEdit = (user) => {
     setEditingTask(user);
     setOpenAddTaskForm(true);
   };
+
+  // Fetch Users For Assigning Tasks
+
   const fetchUsers = async () => {
     try {
       if (loggedInUser.role === "admin") {
@@ -82,10 +100,12 @@ const TaskManagement = () => {
     }
   };
 
+  // Calling Fetch Users Function
   useEffect(() => {
     fetchUsers();
   }, [token, loggedInUser]);
 
+  // Handle User Selection
   const handleUserSelection = (userId) => {
     setSelectedUsers((prev) =>
       prev.includes(userId)
@@ -93,6 +113,8 @@ const TaskManagement = () => {
         : [...prev, userId],
     );
   };
+
+  // Tasks Priority Wise Filter Column
   const columns = [
     {
       id: "New",
@@ -128,6 +150,7 @@ const TaskManagement = () => {
     },
   ];
 
+  // Handle Drag Function for Change Task Status
   const handleDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
 
@@ -176,9 +199,13 @@ const TaskManagement = () => {
       }
     }
   };
+
+  // Function For Opening Task Form
   const handleOpenAddTaskForm = () => {
     setOpenAddTaskForm(true);
   };
+
+  // Handle Delete Tasks Function
   const handleDelete = async (taskId) => {
     try {
       const response = await axios.delete(
@@ -200,10 +227,13 @@ const TaskManagement = () => {
       toast.error(error?.response?.data?.message);
     }
   };
+
+  // Toggle Edit Menu Function
   const toggleEditMenu = (id) => {
     setOpenMenuId((prev) => (prev === id ? null : id));
   };
 
+  // Click Outside Function For Closing Edit  menu
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -217,6 +247,8 @@ const TaskManagement = () => {
       document.removeEventListener("click", handleClickOutside);
     };
   }, []);
+
+  // Click Outside Function For Closing Assign User Popup
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -235,6 +267,7 @@ const TaskManagement = () => {
     };
   }, []);
 
+  // Handle Assign Tasks To User Function
   const handleAssignTasksToUsers = async (task) => {
     try {
       await axios.post(
@@ -254,10 +287,11 @@ const TaskManagement = () => {
       setSelectedUsers([]);
     } catch (error) {
       console.error(error);
-      // showError(error.response?.data?.message);
       toast.error(error?.response?.data?.message);
     }
   };
+
+  // Handle Edit Due Date
 
   const handleEditdueDate = async (taskId, newDueDate) => {
     try {
@@ -286,11 +320,13 @@ const TaskManagement = () => {
     }
   };
 
+  // Handle Open Assign Popup
   const handleOpenAssignPopup = (task) => {
     setSelectedUsers(task.assignTo?.map((user) => user._id) ?? []);
     setShowAssignPopup(showAssignPopup === task._id ? null : task._id);
   };
 
+  // Handle Priority Change Of Tasks
   const handlePriorityChange = async (taskId, priority) => {
     try {
       await axios.patch(
@@ -310,6 +346,8 @@ const TaskManagement = () => {
       toast.error(error?.response?.data?.message);
     }
   };
+
+  // Handle Status Update Of Tasks
   const handleStatusUpdate = async (taskId, status) => {
     try {
       await axios.patch(
@@ -329,12 +367,17 @@ const TaskManagement = () => {
       toast.error(error?.response?.data?.message);
     }
   };
+  // All Tasks Filtering
   const filteredTasks = tasks.filter((task) =>
     task?.title?.toLowerCase()?.includes(search?.toLowerCase()),
   );
+
+  // Logged In User Tasks Filter
   const filteredMyTasks = loggedInTasks.filter((task) =>
     task?.title?.toLowerCase()?.includes(search?.toLowerCase()),
   );
+
+  // Fetch Logged In User Tasks  Api Call
   const loggedInUserTasks = async () => {
     try {
       if (loggedInUser.role === "employee") {
@@ -353,15 +396,21 @@ const TaskManagement = () => {
       toast.error(error?.response?.data?.message);
     }
   };
+
+  // Opening Task Detail Bar
   const handleTaskSidebar = (task) => {
     setSelectedTask(task);
     setIsTaskBarOpen(true);
   };
+
+  // Closing Task Detail Bar
   const closeSidebar = () => {
     setIsTaskBarOpen(false);
     setComment("");
     setSelectedTask(null);
   };
+
+  // Date Formatter Function
   const formatDate = (date) => {
     return date
       ? new Date(date).toLocaleDateString("en-IN", {
@@ -371,6 +420,8 @@ const TaskManagement = () => {
         })
       : "-";
   };
+
+  // Comments Adding Function
   const handleAddComment = async (taskId) => {
     try {
       const response = await axios.post(
@@ -396,6 +447,8 @@ const TaskManagement = () => {
       toast.error(error?.response?.data?.message || "Something went wrong");
     }
   };
+
+  // Handle Delete Tasks Function
   const handleDeleteTaskComment = async (taskId, commentId) => {
     try {
       const response = await axios.delete(
@@ -407,13 +460,11 @@ const TaskManagement = () => {
         },
       );
 
-      // Refresh selected task comments instantly
       setSelectedTask((prev) => ({
         ...prev,
         comments: response.data.comments,
       }));
 
-      // Optional: Update tasks list if it's shown elsewhere
       setTasks((prev) =>
         prev.map((task) =>
           task._id === taskId
@@ -756,7 +807,7 @@ const TaskManagement = () => {
                                         </div>
                                       </div>
                                     </div>
-                                    <div className="w-auto flex justify-center mb-4 items-center">
+                                    <div className=" flex justify-center mb-4 items-center">
                                       <select
                                         value={task.status}
                                         onChange={(e) => {
@@ -766,7 +817,7 @@ const TaskManagement = () => {
                                             e.target.value,
                                           );
                                         }}
-                                        className={`text-xs rounded-lg px-2 py-2 border-none outline-none cursor-pointer ${column.color} ${column.text}`}
+                                        className={`text-xs rounded-lg px-1 py-2 border-none outline-none cursor-pointer ${column.color} ${column.text}`}
                                       >
                                         <option
                                           className="bg-white text-gray-400"
@@ -911,8 +962,8 @@ const TaskManagement = () => {
                                       <p className="text-sm font-semibold">
                                         AssignTo:
                                       </p>
-                                      <div className="  flex flex-wrap gap-1 items-center justify-start ">
-                                        <div className="relative flex ">
+                                      <div className="flex items-center">
+                                        <div className="relative flex items-center">
                                           {task.assignTo
                                             ?.slice(0, 3)
                                             .map((user, index) => (
@@ -924,12 +975,13 @@ const TaskManagement = () => {
                                                 }
                                                 alt={user.name}
                                                 title={user.name}
-                                                className="w-10 h-10 rounded-full border-2 border-white object-cover -ml-5 first:ml-0"
+                                                className="object-cover rounded-full border-2 border-white w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 -ml-2 sm:-ml-3 md:-ml-4 lg:-ml-5 first:ml-0 "
                                                 style={{ zIndex: index + 1 }}
                                               />
                                             ))}
+
                                           {task.assignTo?.length > 3 && (
-                                            <div className="w-5 h-5 absolute -top-1 -right-1 z-30 flex justify-center items-center text-white rounded-full text-xs -ml-6 bg-red-400">
+                                            <div className="absolute -top-1 -right-1 z-30 flex items-center justify-center rounded-full bg-red-500 text-white border border-white w-5 h-5 text-[10px] sm:w-6 sm:h-6 sm:text-xs md:w-7 md:h-7 md:text-sm ">
                                               +{task.assignTo.length - 3}
                                             </div>
                                           )}
@@ -1031,32 +1083,104 @@ const TaskManagement = () => {
           </section>
 
           {/* Members */}
-          <section>
-            <h3 className="font-semibold mb-4">Assigned Members</h3>
+          <section className="relative">
+            <h3 className="font-semibold mb-3">Assigned Members</h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 ">
-              {selectedTask?.assignTo?.map((user) => (
-                <div
-                  key={user._id}
-                  className="flex items-center gap-3 rounded-xl  p-3 hover:bg-gray-50"
-                >
-                  <img
-                    src={
-                      user?.profilePhoto ||
-                      `https://ui-avatars.com/api/?name=${user.name}`
-                    }
-                    alt={user.name}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
+            {/* Dropdown Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMembers(!showMembers);
+              }}
+              className="w-full flex justify-between items-center border border-gray-300 rounded-xl px-4 py-3 hover:border-blue-500 transition"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex -space-x-3">
+                  {selectedTask?.assignTo?.slice(0, 3).map((user) => (
+                    <img
+                      key={user._id}
+                      src={
+                        user.profilePhoto ||
+                        `https://ui-avatars.com/api/?name=${user.name}`
+                      }
+                      alt={user.name}
+                      className="w-9 h-9 rounded-full border-2 border-white object-cover"
+                    />
+                  ))}
 
-                  <div>
-                    <h4 className="font-medium text-sm">{user.name}</h4>
-
-                    <p className="text-xs text-gray-500">{user.email}</p>
-                  </div>
+                  {selectedTask?.assignTo?.length > 3 && (
+                    <div className="w-9 h-9 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs font-semibold">
+                      +{selectedTask.assignTo.length - 3}
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
+
+                <span className="font-medium">
+                  {selectedTask?.assignTo?.length} Members
+                </span>
+              </div>
+
+              <svg
+                className={`w-5 h-5 transition ${
+                  showMembers ? "rotate-180" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Dropdown */}
+            {showMembers && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute z-50 mt-2 w-full bg-white border-gray-300 rounded-xl shadow-xl border"
+              >
+                {/* Search */}
+                <div className="p-3 border-b border-gray-300">
+                  <input
+                    type="text"
+                    placeholder="Search member..."
+                    value={searchMember}
+                    onChange={(e) => setSearchMember(e.target.value)}
+                    className="w-full border rounded-lg px-3 py-2 outline-none  border-gray-300 focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Members */}
+                <div className="max-h-72 overflow-y-auto">
+                  {filteredMembers.length ? (
+                    filteredMembers.map((user) => (
+                      <div
+                        key={user._id}
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 cursor-pointer"
+                      >
+                        <img
+                          src={
+                            user.profilePhoto ||
+                            `https://ui-avatars.com/api/?name=${user.name}`
+                          }
+                          alt={user.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+
+                        <div>
+                          <p className="font-medium">{user.name}</p>
+                          <p className="text-sm text-gray-500">{user.email}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-center py-6 text-gray-500">
+                      No member found.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </section>
 
           {/* Comments */}
@@ -1074,7 +1198,7 @@ const TaskManagement = () => {
                         `https://ui-avatars.com/api/?name=${comment.user.name}`
                       }
                       alt={comment.user.name}
-                      className="w-11 h-11 rounded-full object-cover "
+                      className="w-10 h-10 rounded-full object-cover "
                     />
 
                     {/* Comment */}
