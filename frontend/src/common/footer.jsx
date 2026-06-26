@@ -11,7 +11,7 @@ const Footer = () => {
       <div>
         <p className={`text-sm ${dark ? "text-gray-400" : "text-gray-500"}`}>
           © 2026 EmployeeHub. Proudly powered by{" "}
-          <span className="font-medium text-blue-500">None</span>.
+          <span className="font-medium text-blue-500">Amandeep Rawat</span>.
         </p>
       </div>
       <div

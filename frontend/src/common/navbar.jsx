@@ -88,14 +88,14 @@ const Navbar = () => {
         </div>
 
         <div className="hidden lg:flex items-center gap-5">
-          <Link
+          {/* <Link
             to="/analytics"
             className={`text-sm font-medium transition-colors duration-200 ${
               dark ? "hover:text-gray-300" : "hover:text-blue-600"
             }`}
           >
             Reports & Analytics
-          </Link>
+          </Link> */}
 
           <Link
             to="/help"

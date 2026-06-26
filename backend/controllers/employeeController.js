@@ -2,7 +2,7 @@ const User = require("../model/userModel");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const Leave = require("../model/leaveModel");
-
+const Attendance=require("../model/attendanceModel")
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECURE, {
     expiresIn: process.env.JWT_EXPIRES_IN,
@@ -234,6 +234,14 @@ exports.recentEmployee = async (req, res) => {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
+    const todayPresent = await Attendance.countDocuments({
+      status: "Present",
+      date: {
+        $gte: today,
+        $lt: tomorrow,
+      },
+    });
+
     const onLeaveToday =
       (
         await Leave.distinct("employee", {
@@ -264,6 +272,7 @@ exports.recentEmployee = async (req, res) => {
       recentEmployees,
       CountNewEmployees,
       onLeaveToday,
+      todayPresent,
     });
   } catch (error) {
     res.status(500).json({

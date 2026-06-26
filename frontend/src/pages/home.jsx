@@ -12,6 +12,7 @@ const Home = () => {
   const [totalEmployees, setTotalEmployees] = useState(null);
   const [recentUsers, setRecentUsers] = useState([]);
   const [onLeaveToday, setOnLeaveToday] = useState(0);
+  const [presentToday, setPresentToday] = useState(0);
   const token = localStorage.getItem("token");
   const { dark, loggedInUser } = useContext(ModalContext);
   useEffect(() => {
@@ -55,6 +56,7 @@ const Home = () => {
           setRecentUsers(response.data.recentEmployees);
           setNewUsers(response.data.CountNewEmployees);
           setOnLeaveToday(response.data.onLeaveToday);
+          setPresentToday(response.data.todayPresent);
         }
         return;
       } catch (error) {
@@ -171,9 +173,9 @@ const Home = () => {
               <IoBag />
             </div>
 
-            <h2 className="text-3xl font-bold text-gray-900">776</h2>
+            <h2 className="text-3xl font-bold text-gray-900">{presentToday}</h2>
 
-            <p className="text-gray-700 font-semibold mt-2">Job Applicants</p>
+            <p className="text-gray-700 font-semibold mt-2">Present Today</p>
 
             <div className="flex items-center gap-2 mt-3 text-sm">
               <span

@@ -13,7 +13,7 @@ import AddEmployee from "./common/addEmployee";
 import { ModalProvider } from "./context/modalContext";
 import Profile from "./pages/profile";
 import Help from "./pages/help";
-import Analytics from "./pages/analytics";
+// import Analytics from "./pages/analytics";
 import ProtectedRoute from "./routes/protectedRoute";
 import { Toaster } from "sonner";
 import RoleProtectedRoute from "./routes/roleProtectedRoute";
@@ -47,7 +47,7 @@ const App = () => {
             <Route path="/addEmployee" element={<AddEmployee />} />
             <Route path="/profile/:id" element={<Profile />} />
             <Route path="/help" element={<Help />} />
-            <Route path="/analytics" element={<Analytics />} />
+            {/* <Route path="/analytics" element={<Analytics />} /> */}
           </Route>
         </Route>
 

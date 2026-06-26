@@ -67,7 +67,10 @@ exports.fetchAllTasks = async (req, res) => {
   try {
     const tasks = await Task.find({})
       .sort({ createdAt: -1 })
-      .populate("assignTo", "name email profilePhoto");
+      .populate(
+        "assignTo createdBy comments.user",
+        "name role email profilePhoto",
+      );
     if (!tasks) {
       return res.status(404).json({
         Error: "Tasks Not Found",
@@ -284,7 +287,10 @@ exports.getMyTasks = async (req, res) => {
     const totalTasks = await Task.countDocuments({ assignTo: id });
     const tasks = await Task.find({ assignTo: id })
       .sort({ createdAt: -1 })
-      .populate("assignTo createdBy", "name email profilePhoto");
+      .populate(
+        "assignTo createdBy comments.user",
+        "name role email profilePhoto",
+      );
     if (!tasks) {
       return res.status(404).json({
         Error: "Tasks Not Found",
@@ -295,6 +301,123 @@ exports.getMyTasks = async (req, res) => {
     res.status(500).json({
       message: "Server Error",
       error: error.message,
+    });
+  }
+};
+
+exports.addComment = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const message = req.body.comment;
+    const userId = req.user._id;
+    console.log(message);
+
+    if (!message?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Comment is required.",
+      });
+    }
+
+    const task = await Task.findById(taskId);
+
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: "Task not found.",
+      });
+    }
+
+    // Check if user is assigned to this task
+    const isAssigned = task.assignTo.some(
+      (id) => id.toString() === userId.toString(),
+    );
+
+    // Optional: Allow task creator as well
+    const isCreator = task.createdBy.toString() === userId.toString();
+
+    if (!isAssigned && !isCreator) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to comment on this task.",
+      });
+    }
+
+    task.comments.push({
+      user: userId,
+      message: message.trim(),
+    });
+
+    await task.save();
+
+    await task.populate("comments.user", "name role profilePhoto");
+
+    return res.status(201).json({
+      success: true,
+      message: "Comment added successfully.",
+      comments: task.comments,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+exports.deleteComment = async (req, res) => {
+  try {
+    const { taskId, commentId } = req.params;
+
+    const task = await Task.findById(taskId);
+
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: "Task not found.",
+      });
+    }
+
+    const comment = task.comments.id(commentId);
+
+    if (!comment) {
+      return res.status(404).json({
+        success: false,
+        message: "Comment not found.",
+      });
+    }
+
+    // Optional: Allow only the comment owner or admin
+    if (
+      req.user.role !== "admin" &&
+      comment.user.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to delete this comment.",
+      });
+    }
+
+    comment.deleteOne();
+
+    await task.save();
+
+    await task.populate({
+      path: "comments.user",
+      select: "name email profilePhoto",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Comment deleted successfully.",
+      comments: task.comments,
+    });
+  } catch (error) {
+    console.error("Delete Comment Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error.",
     });
   }
 };

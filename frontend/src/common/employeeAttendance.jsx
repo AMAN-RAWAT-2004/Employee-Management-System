@@ -157,18 +157,18 @@ const EmployeeAttendance = () => {
               <h2 className="text-2xl text-center font-bold ">
                 Today's Attendance
               </h2>
-              {attendance?.checkOut === null ||
-              attendance?.checkOut === "" ||
-              attendance?.workDuration > 510 ? (
-                ""
-              ) : (
-                <button
-                  className="bg-red-500 text-white px-3 py-1.5 text-sm rounded transition-all duration-300 hover:bg-red-700"
-                  onClick={() => handleResumeAttendance(attendance?._id)}
-                >
-                  Resume
-                </button>
-              )}
+              {attendance?.checkIn !== null &&
+                attendance?.checkOut !== null &&
+                attendance?.checkOut !== "" &&
+                attendance?.checkOut !== "" &&
+                attendance?.workDuration <= 510 && (
+                  <button
+                    className="bg-red-500 text-white px-3 py-1.5 text-sm rounded transition-all duration-300 hover:bg-red-700"
+                    onClick={() => handleResumeAttendance(attendance?._id)}
+                  >
+                    Resume
+                  </button>
+                )}
             </div>
 
             <div className="grid sm:grid-cols-2 gap-8">

@@ -7,8 +7,10 @@ import { ModalContext } from "../context/modalContext";
 import { BsThreeDots } from "react-icons/bs";
 import { FiPlus } from "react-icons/fi";
 import { toast } from "sonner";
-import { IoSearchOutline } from "react-icons/io5";
-
+import { IoClose, IoSearchOutline } from "react-icons/io5";
+import { formatDistanceToNow } from "date-fns";
+import { MdDeleteOutline } from "react-icons/md";
+import { RiVerifiedBadgeFill } from "react-icons/ri";
 const TaskManagement = () => {
   const {
     setOpenAddTaskForm,
@@ -18,14 +20,17 @@ const TaskManagement = () => {
     setEditingTask,
     loggedInUser,
   } = useContext(ModalContext);
+  const [isTaskBarOpen, setIsTaskBarOpen] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [loggedInTasks, setLoggedInTasks] = useState([]);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [showAssignPopup, setShowAssignPopup] = useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
   const [users, setUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [dueDate, setDueDate] = useState("");
   const token = localStorage.getItem("token");
+  const [comment, setComment] = useState("");
   const menuRef = useRef(null);
   const [search, setSearch] = useState("");
   const assignUserRef = useRef(null);
@@ -50,7 +55,7 @@ const TaskManagement = () => {
   useEffect(() => {
     fetchTasks();
     loggedInUserTasks();
-  }, [refreshEmployee, token]);
+  }, [refreshEmployee, token, loggedInUser]);
 
   const handleEdit = (user) => {
     setEditingTask(user);
@@ -79,7 +84,7 @@ const TaskManagement = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [token, loggedInUser]);
 
   const handleUserSelection = (userId) => {
     setSelectedUsers((prev) =>
@@ -282,8 +287,7 @@ const TaskManagement = () => {
   };
 
   const handleOpenAssignPopup = (task) => {
-    setSelectedUsers(task.assignTo?.map((user) => user._id) || []);
-
+    setSelectedUsers(task.assignTo?.map((user) => user._id) ?? []);
     setShowAssignPopup(showAssignPopup === task._id ? null : task._id);
   };
 
@@ -293,6 +297,11 @@ const TaskManagement = () => {
         `${import.meta.env.VITE_BACKEND_URL}/api/v1/tasks/${taskId}/priority`,
         {
           priority,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
       );
 
@@ -344,9 +353,84 @@ const TaskManagement = () => {
       toast.error(error?.response?.data?.message);
     }
   };
+  const handleTaskSidebar = (task) => {
+    setSelectedTask(task);
+    setIsTaskBarOpen(true);
+  };
+  const closeSidebar = () => {
+    setIsTaskBarOpen(false);
+    setComment("");
+    setSelectedTask(null);
+  };
+  const formatDate = (date) => {
+    return date
+      ? new Date(date).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      : "-";
+  };
+  const handleAddComment = async (taskId) => {
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/v1/tasks/${taskId}/add-comment`,
+        { comment },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      setSelectedTask((prev) => ({
+        ...prev,
+        comments: response.data.comments,
+      }));
+      fetchTasks();
+      loggedInUserTasks();
+      setComment("");
+
+      toast.success(response.data.message);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Something went wrong");
+    }
+  };
+  const handleDeleteTaskComment = async (taskId, commentId) => {
+    try {
+      const response = await axios.delete(
+        `${import.meta.env.VITE_BACKEND_URL}/api/v1/tasks/${taskId}/comment/${commentId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      // Refresh selected task comments instantly
+      setSelectedTask((prev) => ({
+        ...prev,
+        comments: response.data.comments,
+      }));
+
+      // Optional: Update tasks list if it's shown elsewhere
+      setTasks((prev) =>
+        prev.map((task) =>
+          task._id === taskId
+            ? { ...task, comments: response.data.comments }
+            : task,
+        ),
+      );
+
+      toast.success(response.data.message);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Something went wrong");
+    }
+  };
   return (
-    <div className="w-full min-h-screen flex justify-center items-start px-4 sm:px-6 md:px-10 lg:px-20 xl:px-20 py-6 md:py-10">
+    <div className="w-full relative min-h-screen flex justify-center overflow-x-hidden items-start px-4 sm:px-6 md:px-10 lg:px-20 xl:px-20 py-6 md:py-10">
       <div className="flex flex-col w-full max-w-7xl gap-8">
+        {/* Header  */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1
@@ -365,7 +449,7 @@ const TaskManagement = () => {
               <p className="text-gray-400">/ Task Management</p>
             </div>
           </div>
-          {loggedInUser.role === "admin" ? (
+          {loggedInUser?.role === "admin" ? (
             <button
               onClick={handleOpenAddTaskForm}
               className="flex justify-center items-center bg-blue-500 text-white px-4 py-2 rounded-lg gap-2 hover:bg-blue-600 w-full md:w-auto"
@@ -412,6 +496,8 @@ const TaskManagement = () => {
           </div>
         </div>
 
+        {/* Drag And Drop   */}
+
         {loggedInUser && loggedInUser?.role === "admin" ? (
           <DragDropContext onDragEnd={handleDragEnd}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -450,6 +536,7 @@ const TaskManagement = () => {
                               {(provided, snapshot) => (
                                 <div
                                   ref={provided.innerRef}
+                                  onClick={() => handleTaskSidebar(task)}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
                                   className={`bg-white relative rounded-xl p-4 border border-gray-100 transition-all duration-200 ${
@@ -466,12 +553,14 @@ const TaskManagement = () => {
                                   >
                                     <select
                                       value={task.priority}
-                                      onChange={(e) =>
+                                      onClick={(e) => e.stopPropagation()}
+                                      onChange={(e) => {
+                                        e.stopPropagation();
                                         handlePriorityChange(
                                           task._id,
                                           e.target.value,
-                                        )
-                                      }
+                                        );
+                                      }}
                                       className={`text-xs rounded-lg px-3 py-1 border-none outline-none cursor-pointer ${
                                         task.priority === "High"
                                           ? "bg-red-100 text-red-600"
@@ -500,7 +589,10 @@ const TaskManagement = () => {
                                       </option>
                                     </select>
                                     <button
-                                      onClick={() => toggleEditMenu(task._id)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleEditMenu(task._id);
+                                      }}
                                       className="p-1 rounded-lg border border-gray-200 hover:bg-gray-100"
                                     >
                                       <BsThreeDots />
@@ -510,7 +602,10 @@ const TaskManagement = () => {
                                   {openMenuId === task._id && (
                                     <div className="absolute top-11 right-5 w-32 bg-white border border-gray-300 rounded-xl shadow-lg overflow-hidden z-20">
                                       <button
-                                        onClick={() => handleEdit(task)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEdit(task);
+                                        }}
                                         className="w-full text-sm text-left px-4 py-3 hover:bg-gray-100"
                                       >
                                         Edit
@@ -556,12 +651,13 @@ const TaskManagement = () => {
                                         value={
                                           task.dueDate?.split("T")[0] || ""
                                         }
-                                        onChange={(e) =>
+                                        onChange={(e) => {
+                                          e.stopPropagation();
                                           handleEditdueDate(
                                             task._id,
                                             e.target.value,
-                                          )
-                                        }
+                                          );
+                                        }}
                                         name="dueDate"
                                       />
                                     </div>
@@ -595,11 +691,13 @@ const TaskManagement = () => {
                                           )}
                                         </div>
 
-                                        <div className="relative z-30">
+                                        <div className="relative z-20">
                                           <button
-                                            onClick={() =>
-                                              handleOpenAssignPopup(task)
-                                            }
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+
+                                              handleOpenAssignPopup(task);
+                                            }}
                                             className={`w-10 h-10 rounded-full ${column.color} border-2 border-white flex justify-center items-center -ml-5`}
                                           >
                                             <FiPlus
@@ -620,6 +718,9 @@ const TaskManagement = () => {
                                                 {users.map((user) => (
                                                   <label
                                                     key={user._id}
+                                                    onClick={(e) =>
+                                                      e.stopPropagation()
+                                                    }
                                                     className="flex items-center text-sm gap-2 py-1"
                                                   >
                                                     <input
@@ -627,11 +728,12 @@ const TaskManagement = () => {
                                                       checked={selectedUsers.includes(
                                                         user._id,
                                                       )}
-                                                      onChange={() =>
+                                                      onChange={(e) => {
+                                                        e.stopPropagation();
                                                         handleUserSelection(
                                                           user._id,
-                                                        )
-                                                      }
+                                                        );
+                                                      }}
                                                     />
                                                     <span>{user.name}</span>
                                                   </label>
@@ -639,9 +741,12 @@ const TaskManagement = () => {
                                               </div>
 
                                               <button
-                                                onClick={() =>
-                                                  handleAssignTasksToUsers(task)
-                                                }
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleAssignTasksToUsers(
+                                                    task,
+                                                  );
+                                                }}
                                                 className="mt-2 text-sm w-full bg-blue-500 text-white py-1 rounded-lg"
                                               >
                                                 Assign
@@ -654,12 +759,13 @@ const TaskManagement = () => {
                                     <div className="w-auto flex justify-center mb-4 items-center">
                                       <select
                                         value={task.status}
-                                        onChange={(e) =>
+                                        onChange={(e) => {
+                                          e.stopPropagation();
                                           handleStatusUpdate(
                                             task._id,
                                             e.target.value,
-                                          )
-                                        }
+                                          );
+                                        }}
                                         className={`text-xs rounded-lg px-2 py-2 border-none outline-none cursor-pointer ${column.color} ${column.text}`}
                                       >
                                         <option
@@ -740,6 +846,7 @@ const TaskManagement = () => {
                             >
                               {(provided, snapshot) => (
                                 <div
+                                  onClick={() => handleTaskSidebar(task)}
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
@@ -852,6 +959,203 @@ const TaskManagement = () => {
             </div>
           </DragDropContext>
         )}
+      </div>
+      <div
+        className={`fixed top-0 right-0 h-screen
+  w-full sm:w-[500px] lg:w-[620px]
+  bg-white shadow-2xl z-50
+  transition-transform duration-300
+  flex flex-col
+  ${isTaskBarOpen ? "translate-x-0" : "translate-x-full"}`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-300 bg-white sticky top-0 z-20">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">
+              {selectedTask?.title}
+            </h2>
+
+            <p className="text-sm text-gray-400">
+              #{selectedTask?._id?.slice(-6)}
+            </p>
+          </div>
+
+          <button
+            onClick={closeSidebar}
+            className="p-2 rounded-full hover:bg-gray-100 transition"
+          >
+            <IoClose size={24} />
+          </button>
+        </div>
+
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-7">
+          {/* Description */}
+          <section>
+            <h3 className="font-semibold text-gray-700 mb-3">Description</h3>
+
+            <div className="rounded-xl border border-gray-300 bg-gray-50 p-4 leading-7 text-gray-600">
+              {selectedTask?.description || "No description"}
+            </div>
+          </section>
+
+          {/* Info */}
+          <section className="grid grid-cols-2 gap-4">
+            <div className="rounded-xl border border-gray-300 p-4">
+              <p className="text-xs uppercase text-gray-400 mb-1">Status</p>
+
+              <p className="font-semibold text-blue-600">
+                {selectedTask?.status}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-gray-300 p-4">
+              <p className="text-xs uppercase text-gray-400 mb-1">Priority</p>
+
+              <p className="font-semibold text-red-500">
+                {selectedTask?.priority}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-gray-300 p-4">
+              <p className="text-xs uppercase text-gray-400 mb-1">Start Date</p>
+
+              <p>{formatDate(selectedTask?.startDate)}</p>
+            </div>
+
+            <div className="rounded-xl border border-gray-300 p-4">
+              <p className="text-xs uppercase text-gray-400 mb-1">Due Date</p>
+
+              <p>{formatDate(selectedTask?.dueDate)}</p>
+            </div>
+          </section>
+
+          {/* Members */}
+          <section>
+            <h3 className="font-semibold mb-4">Assigned Members</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 ">
+              {selectedTask?.assignTo?.map((user) => (
+                <div
+                  key={user._id}
+                  className="flex items-center gap-3 rounded-xl  p-3 hover:bg-gray-50"
+                >
+                  <img
+                    src={
+                      user?.profilePhoto ||
+                      `https://ui-avatars.com/api/?name=${user.name}`
+                    }
+                    alt={user.name}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+
+                  <div>
+                    <h4 className="font-medium text-sm">{user.name}</h4>
+
+                    <p className="text-xs text-gray-500">{user.email}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Comments */}
+          <section>
+            <h3 className="font-semibold mb-4">Comments</h3>
+
+            <div className="space-y-5">
+              {selectedTask?.comments?.length ? (
+                selectedTask.comments.map((comment) => (
+                  <div key={comment._id} className="flex items-start gap-3">
+                    {/* Avatar */}
+                    <img
+                      src={
+                        comment.user.profilePhoto ||
+                        `https://ui-avatars.com/api/?name=${comment.user.name}`
+                      }
+                      alt={comment.user.name}
+                      className="w-11 h-11 rounded-full object-cover "
+                    />
+
+                    {/* Comment */}
+                    <div className="flex-1">
+                      {/* Header */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex flex-col justify-start items-start">
+                          <div className="flex justify-center items-center gap-4">
+                            <h4 className="font-semibold text-gray-800">
+                              {comment.user.name}
+                            </h4>
+                            {comment.user.role === "admin" && (
+                              <RiVerifiedBadgeFill className="text-blue-600 text-lg " />
+                            )}
+                          </div>
+
+                          <p className="text-xs text-gray-400">
+                            {formatDistanceToNow(new Date(comment.createdAt), {
+                              addSuffix: true,
+                            })}
+                          </p>
+                        </div>
+
+                        {(loggedInUser?._id === comment.user._id ||
+                          loggedInUser?.role === "admin") && (
+                          <button
+                            onClick={() =>
+                              handleDeleteTaskComment(
+                                selectedTask._id,
+                                comment._id,
+                              )
+                            }
+                            className="p-2 rounded-lg text-red-500 hover:bg-red-100 transition"
+                            title="Delete Comment"
+                          >
+                            <MdDeleteOutline size={20} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Bubble */}
+                      <div className="mt-2 rounded-2xl rounded-tl-sm bg-gray-100 border border-gray-200 px-4 py-3">
+                        <p className="text-sm leading-6 text-gray-700 whitespace-pre-wrap wrap-break-word">
+                          {comment.message}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 py-12">
+                  <p className="text-gray-400 text-sm">No comments yet</p>
+
+                  <p className="text-xs text-gray-300 mt-1">
+                    Be the first to start the discussion.
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-gray-300 bg-white p-5">
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Write a comment..."
+              className="flex-1 rounded-xl border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            <button
+              onClick={() => handleAddComment(selectedTask?._id)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-xl font-medium"
+            >
+              Send
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
