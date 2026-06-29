@@ -46,6 +46,7 @@ const TaskManagement = () => {
       user.name.toLowerCase().includes(searchMember.toLowerCase()) ||
       user.email.toLowerCase().includes(searchMember.toLowerCase()),
   );
+
   // Fetch Tasks Api Calls Function
   const fetchTasks = async () => {
     try {
@@ -65,8 +66,8 @@ const TaskManagement = () => {
       toast.error(error?.response?.data?.message);
     }
   };
-  // Calling Fetch Tasks Function
 
+  // Calling Fetch Tasks Function
   useEffect(() => {
     fetchTasks();
     loggedInUserTasks();
@@ -79,7 +80,6 @@ const TaskManagement = () => {
   };
 
   // Fetch Users For Assigning Tasks
-
   const fetchUsers = async () => {
     try {
       if (loggedInUser.role === "admin") {
@@ -310,10 +310,8 @@ const TaskManagement = () => {
       }));
 
       fetchTasks();
-
       setShowAssignPopup(null);
       setShowMembers(false);
-
       setSelectedUsers([]);
     } catch (error) {
       console.error(error);
@@ -321,6 +319,7 @@ const TaskManagement = () => {
     }
   };
 
+  //Handle  Edit Due Date Function
   const handleEditdueDate = async (taskId, newDueDate) => {
     try {
       const response = await axios.patch(
@@ -480,7 +479,7 @@ const TaskManagement = () => {
     }
   };
 
-  // Handle Delete Tasks Function
+  // Handle Delete Tasks Comments Function
   const handleDeleteTaskComment = async (taskId, commentId) => {
     try {
       const response = await axios.delete(
@@ -511,6 +510,7 @@ const TaskManagement = () => {
     }
   };
 
+  // Handle Edit Tasks Comments Function
   const handleEditComment = async (taskId, commentId) => {
     try {
       const response = await axios.put(
@@ -539,6 +539,7 @@ const TaskManagement = () => {
     }
   };
 
+  // Toggle Comment Menu Function
   const toggleDeleteCommentMenu = (id) => {
     setOpenDeleteCommentMenu((prev) => (prev === id ? null : id));
   };
@@ -1080,10 +1081,6 @@ const TaskManagement = () => {
             <h2 className="text-2xl font-bold text-gray-800">
               {selectedTask?.title}
             </h2>
-
-            {/* <p className="text-sm text-gray-400">
-              #{selectedTask?._id?.slice(-6)}
-            </p> */}
           </div>
 
           <button

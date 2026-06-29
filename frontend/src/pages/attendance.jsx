@@ -344,7 +344,7 @@ const Attendance = () => {
               <button
                 disabled={page === 1}
                 onClick={() => setPage((prev) => prev - 1)}
-                className="px-2 py-1 bg-white text-sm rounded flex text-blue-600 border border-blue-500 items-center justify-center  transition-all duration-150 hover:bg-blue-600 hover:text-white disabled:cursor-not-allowed  "
+                className="px-2 py-1 bg-white text-sm rounded flex hover:cursor-pointer text-blue-600 border border-blue-500 items-center justify-center  transition-all duration-150 hover:bg-blue-600 hover:text-white disabled:cursor-not-allowed  "
               >
                 <MdArrowBackIos /> Previous
               </button>
@@ -356,7 +356,7 @@ const Attendance = () => {
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage((prev) => prev + 1)}
-                className="px-2 py-1 bg-white text-sm flex text-blue-600 border border-blue-500 items-center justify-center rounded transition-all duration-150 hover:bg-blue-600 hover:text-white disabled:cursor-not-allowed  "
+                className="px-2 py-1 bg-white text-sm flex hover:cursor-pointer text-blue-600 border border-blue-500 items-center justify-center rounded transition-all duration-150 hover:bg-blue-600 hover:text-white disabled:cursor-not-allowed  "
               >
                 Next <MdArrowForwardIos />
               </button>
