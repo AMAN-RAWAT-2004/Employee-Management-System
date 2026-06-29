@@ -331,7 +331,6 @@ exports.addComment = async (req, res) => {
     const { taskId } = req.params;
     const message = req.body.comment;
     const userId = req.user._id;
-    console.log(message);
 
     if (!message?.trim()) {
       return res.status(400).json({

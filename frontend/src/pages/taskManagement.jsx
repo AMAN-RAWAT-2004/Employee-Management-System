@@ -28,7 +28,6 @@ const TaskManagement = () => {
   const [showAssignPopup, setShowAssignPopup] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
   const [users, setUsers] = useState([]);
-  const [selectedUsers, setSelectedUsers] = useState([]);
   const [dueDate, setDueDate] = useState("");
   const [search, setSearch] = useState("");
   const [showMembers, setShowMembers] = useState(false);
@@ -39,15 +38,14 @@ const TaskManagement = () => {
   const [comment, setComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [openDeleteCommentMenu, setOpenDeleteCommentMenu] = useState(null);
+  const [selectedUsers, setSelectedUsers] = useState([]);
 
   // Filter Assigned Members In TaskDetails Bar
-  const filteredMembers =
-    selectedTask?.assignTo?.filter(
-      (user) =>
-        user.name.toLowerCase().includes(searchMember.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchMember.toLowerCase()),
-    ) || [];
-
+  const filteredMembers = users.filter(
+    (user) =>
+      user.name.toLowerCase().includes(searchMember.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchMember.toLowerCase()),
+  );
   // Fetch Tasks Api Calls Function
   const fetchTasks = async () => {
     try {
@@ -302,16 +300,26 @@ const TaskManagement = () => {
         },
       );
 
+      const updatedMembers = users.filter((user) =>
+        selectedUsers.includes(user._id),
+      );
+
+      setSelectedTask((prev) => ({
+        ...prev,
+        assignTo: updatedMembers,
+      }));
+
       fetchTasks();
+
       setShowAssignPopup(null);
+      setShowMembers(false);
+
       setSelectedUsers([]);
     } catch (error) {
       console.error(error);
       toast.error(error?.response?.data?.message);
     }
   };
-
-  // Handle Edit Due Date
 
   const handleEditdueDate = async (taskId, newDueDate) => {
     try {
@@ -496,7 +504,6 @@ const TaskManagement = () => {
             : task,
         ),
       );
-      // setOpenDeleteCommentMenu(null);
 
       toast.success(response.data.message);
     } catch (error) {
@@ -1061,7 +1068,7 @@ const TaskManagement = () => {
       </div>
       <div
         className={`fixed top-0 right-0 h-screen
-  w-full sm:w-[500px] lg:w-[620px]
+  w-full sm:w-125 lg:w-155
   bg-white shadow-2xl z-50
   transition-transform duration-300
   flex flex-col
@@ -1137,6 +1144,13 @@ const TaskManagement = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
+
+                if (!showMembers) {
+                  setSelectedUsers(
+                    selectedTask?.assignTo?.map((user) => user._id) || [],
+                  );
+                }
+
                 setShowMembers(!showMembers);
               }}
               className="w-full flex justify-between items-center border border-gray-300 rounded-xl px-4 py-3 hover:border-blue-500 transition"
@@ -1201,30 +1215,47 @@ const TaskManagement = () => {
                 <div className="max-h-72 overflow-y-auto">
                   {filteredMembers.length ? (
                     filteredMembers.map((user) => (
-                      <div
+                      <label
                         key={user._id}
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 cursor-pointer"
+                        className="flex items-center justify-between px-4 py-3 hover:bg-gray-100 cursor-pointer"
                       >
-                        <img
-                          src={
-                            user.profilePhoto ||
-                            `https://ui-avatars.com/api/?name=${user.name}`
-                          }
-                          alt={user.name}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={
+                              user.profilePhoto ||
+                              `https://ui-avatars.com/api/?name=${user.name}`
+                            }
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
 
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
+                          <div>
+                            <p className="font-medium">{user.name}</p>
+                            <p className="text-sm text-gray-500">
+                              {user.email}
+                            </p>
+                          </div>
                         </div>
-                      </div>
+
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.includes(user._id)}
+                          onChange={() => handleUserSelection(user._id)}
+                        />
+                      </label>
                     ))
                   ) : (
                     <p className="text-center py-6 text-gray-500">
                       No member found.
                     </p>
                   )}
+                </div>
+                <div className="p-3 border-t border-gray-300">
+                  <button
+                    onClick={() => handleAssignTasksToUsers(selectedTask)}
+                    className="w-full bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-700"
+                  >
+                    Save Changes
+                  </button>
                 </div>
               </div>
             )}
