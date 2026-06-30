@@ -17,8 +17,8 @@ router.put(
   protect,
   taskController.updateComment,
 );
+router.post("/:taskId/assign", protect, taskController.assignTask);
 router.use(protect, admin);
-router.post("/:taskId/assign", taskController.assignTask);
 router.patch("/:taskId/due-date", taskController.updateDueDate);
 router.patch("/:taskId/priority", taskController.updateTasksPriority);
 router.post("/", taskController.addTasks);

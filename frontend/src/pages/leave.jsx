@@ -31,14 +31,12 @@ const Leave = () => {
   // Function For Fetching Particular LoggedInUser Leaves
   const fetchLoggedInUserLeaves = async () => {
     try {
-      if (loggedInUser.role !== "admin") {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/v1/leave/${loggedInUser._id}/leaves?page=${page}&limit=6`,
-        );
-        setParticularLeaves(response.data.leave);
-        setTotalPages(response.data.pagination.totalPages);
-      }
-      return;
+      if (loggedInUser.role === "admin") return;
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/v1/leave/${loggedInUser._id}/leaves?page=${page}&limit=6`,
+      );
+      setParticularLeaves(response.data.leave);
+      setTotalPages(response.data.pagination.totalPages);
     } catch (error) {
       toast.error(error?.response?.data?.message);
     }
@@ -265,7 +263,7 @@ const Leave = () => {
           </div>
           {loggedInUser && loggedInUser.role === "admin" ? (
             <div className="w-full overflow-x-auto">
-              <table className="min-w-[1000px] w-full">
+              <table className="min-w-250 w-full">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
                     <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold text-gray-600">
@@ -430,7 +428,7 @@ const Leave = () => {
             </div>
           ) : (
             <div className="w-full overflow-x-auto">
-              <table className="min-w-[1000px] w-full">
+              <table className="min-w-250 w-full">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
                     <th className="text-left px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-semibold text-gray-600">
@@ -471,88 +469,99 @@ const Leave = () => {
                 </thead>
 
                 <tbody>
-                  {particularLeaves.map((leave) => (
-                    <tr
-                      key={leave._id}
-                      className="border-b border-gray-100 text-xs md:text-sm hover:bg-blue-50 transition"
-                    >
-                      <td className="px-3 md:px-6 py-3 md:py-4">
-                        <div className="flex items-center gap-2 md:gap-3">
-                          <img
-                            src={leave.employee.profilePhoto}
-                            alt={leave.employee.name}
-                            className="w-8 h-8 md:w-12 md:h-12 rounded-full object-cover"
-                          />
+                  {particularLeaves.length !== 0 &&
+                    particularLeaves.map((leave) => (
+                      <tr
+                        key={leave._id}
+                        className="border-b border-gray-100 text-xs md:text-sm hover:bg-blue-50 transition"
+                      >
+                        <td className="px-3 md:px-6 py-3 md:py-4">
+                          <div className="flex items-center gap-2 md:gap-3">
+                            <img
+                              src={leave.employee.profilePhoto}
+                              alt={leave.employee.name}
+                              className="w-8 h-8 md:w-12 md:h-12 rounded-full object-cover"
+                            />
 
-                          <div>
-                            <h4 className="font-semibold capitalize text-gray-900 whitespace-nowrap">
-                              {leave.employee.name}
-                            </h4>
+                            <div>
+                              <h4 className="font-semibold capitalize text-gray-900 whitespace-nowrap">
+                                {leave.employee.name}
+                              </h4>
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
-                        {leave.leaveType}
-                      </td>
+                        <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                          {leave.leaveType}
+                        </td>
 
-                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
-                        {leave.employee.department}
-                      </td>
+                        <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                          {leave.employee.department}
+                        </td>
 
-                      <td className="px-3 md:px-6 py-3 md:py-4">
-                        {leave.leaveDays}
-                      </td>
+                        <td className="px-3 md:px-6 py-3 md:py-4">
+                          {leave.leaveDays}
+                        </td>
 
-                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
-                        {new Date(leave.startDate).toLocaleDateString("en-GB", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </td>
+                        <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                          {new Date(leave.startDate).toLocaleDateString(
+                            "en-GB",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            },
+                          )}
+                        </td>
 
-                      <td className="px-3 md:px-6 py-3 text-center md:py-4 whitespace-nowrap">
-                        {leave.endDate
-                          ? new Date(leave.endDate).toLocaleDateString(
-                              "en-GB",
-                              {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              },
-                            )
-                          : "-"}
-                      </td>
-                      <td className="px-3 md:px-6 py-3 md:py-4 text-center whitespace-nowrap">
-                        {leave.leaveType === "HalfDay"
-                          ? formatTime(leave.startTime)
-                          : "-"}
-                      </td>
+                        <td className="px-3 md:px-6 py-3 text-center md:py-4 whitespace-nowrap">
+                          {leave.endDate
+                            ? new Date(leave.endDate).toLocaleDateString(
+                                "en-GB",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                },
+                              )
+                            : "-"}
+                        </td>
+                        <td className="px-3 md:px-6 py-3 md:py-4 text-center whitespace-nowrap">
+                          {leave.leaveType === "HalfDay"
+                            ? formatTime(leave.startTime)
+                            : "-"}
+                        </td>
 
-                      <td className="px-3 md:px-6 py-3 md:py-4 text-center whitespace-nowrap">
-                        {leave.leaveType === "HalfDay"
-                          ? formatTime(leave.endTime)
-                          : "-"}
-                      </td>
+                        <td className="px-3 md:px-6 py-3 md:py-4 text-center whitespace-nowrap">
+                          {leave.leaveType === "HalfDay"
+                            ? formatTime(leave.endTime)
+                            : "-"}
+                        </td>
 
-                      <td className="px-3 md:px-6 py-3 md:py-4">
-                        <p
-                          className={`text-xs md:text-sm p-2 text-center rounded-lg ${
-                            leave.status === "Pending"
-                              ? "text-orange-700 bg-orange-100"
-                              : leave.status === "Approved"
-                                ? "text-blue-700 bg-blue-100"
-                                : "text-red-700 bg-red-100"
-                          }`}
-                        >
-                          {leave.status}
-                        </p>
-                      </td>
-                    </tr>
-                  ))}
+                        <td className="px-3 md:px-6 py-3 md:py-4">
+                          <p
+                            className={`text-xs md:text-sm p-2 text-center rounded-lg ${
+                              leave.status === "Pending"
+                                ? "text-orange-700 bg-orange-100"
+                                : leave.status === "Approved"
+                                  ? "text-blue-700 bg-blue-100"
+                                  : "text-red-700 bg-red-100"
+                            }`}
+                          >
+                            {leave.status}
+                          </p>
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
+              {particularLeaves.length === 0 && (
+                <div className="w-full flex justify-center items-center h-[150px]">
+                  <h1 className="text-center text-2xl font-semibold  text-gray-400">
+                    No Leaves Found for the Logged In User
+                  </h1>
+                </div>
+              )}
             </div>
           )}
           <div className=" w-full flex items-center justify-center md:justify-end gap-4 mt-8 xl:mr-60">

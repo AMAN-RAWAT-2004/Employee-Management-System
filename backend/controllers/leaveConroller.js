@@ -471,21 +471,21 @@ exports.fetchLeavesByEmployeeId = async (req, res) => {
       });
     }
     const totalLeaves = await Leave.countDocuments({ employee: employeeId });
-    let query =  Leave.find({ employee: employeeId }).populate(
+    let query = Leave.find({ employee: employeeId }).populate(
       "employee",
       "name profilePhoto department designation",
     );
-    if(page && limit){
-      const skip=(page-1)*limit;
-      query.skip(skip).limit(limit)
+    if (page && limit) {
+      const skip = (page - 1) * limit;
+      query.skip(skip).limit(limit);
     }
 
-    const leave =await query;
-    if (leave.length === 0) {
-      return res.status(404).json({
-        message: "Leaves not Found",
-      });
-    }
+    const leave = await query;
+    // if (leave.length === 0) {
+    //   return res.status(404).json({
+    //     message: "Leaves not Found",
+    //   });
+    // }
     const formattedLeaves = leave.map((leave) => {
       let leaveDays;
 
@@ -510,7 +510,7 @@ exports.fetchLeavesByEmployeeId = async (req, res) => {
       message: "Employee Leaves Found Successfully",
       totalLeaves,
       leave: formattedLeaves,
-       pagination:
+      pagination:
         page && limit
           ? {
               totalLeaves,

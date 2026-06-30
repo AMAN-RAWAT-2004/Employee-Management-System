@@ -7,7 +7,7 @@ import { FaGithub } from "react-icons/fa6";
 const Register = () => {
   return (
     <div className="relative w-screen h-screen p-5  bg-[url('/bg-image.jpg')] opacity-95 bg-cover bg-center  ">
-      <div className="absolute top-30 left-60  flex flex-col justify-center items-center gap-5 w-[450px]  rounded-3xl bg-white/95 shadow-2xl px-6  py-10 ">
+      <div className="absolute top-30 left-60  flex flex-col justify-center items-center gap-5 w-112.5  rounded-3xl bg-white/95 shadow-2xl px-6  py-10 ">
         <div className="flex items-center justify-center gap-4">
           <img src="logo.png" alt="logo" className="w-12 h-12 " />
           <h1 className="font-bold text-2xl">EmployeeHub</h1>

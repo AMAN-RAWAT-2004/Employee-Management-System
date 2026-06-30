@@ -82,19 +82,16 @@ const TaskManagement = () => {
   // Fetch Users For Assigning Tasks
   const fetchUsers = async () => {
     try {
-      if (loggedInUser.role === "admin") {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/v1/employee`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/v1/employee`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        );
+        },
+      );
 
-        setUsers(response.data.employees);
-      }
-      return;
+      setUsers(response.data.employees);
     } catch (error) {
       console.log(error);
       toast.error(error?.response?.data?.message);
@@ -267,7 +264,6 @@ const TaskManagement = () => {
   }, []);
 
   // Click Outside Function For Closing Assign User Popup
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -310,6 +306,7 @@ const TaskManagement = () => {
       }));
 
       fetchTasks();
+      loggedInUserTasks();
       setShowAssignPopup(null);
       setShowMembers(false);
       setSelectedUsers([]);

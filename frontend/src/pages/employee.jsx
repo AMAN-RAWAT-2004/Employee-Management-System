@@ -128,8 +128,6 @@ const Employee = () => {
               </span>{" "}
               Employees
             </h1>
-
-         
           </div>
 
           {loggedInUser.role === "admin" ? (

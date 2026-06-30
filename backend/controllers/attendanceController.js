@@ -806,7 +806,7 @@ exports.resumeAttendance = async (req, res) => {
     }
 
     attendance.checkOut = null;
-    attendance.workDuration = 0; // or null
+    attendance.workDuration = 0;
 
     await attendance.save();
 

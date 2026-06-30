@@ -458,13 +458,13 @@ const Attendance = () => {
             </div>
 
             {/* Pie Chart */}
-            <div className="w-full xl:w-[420px] shrink-0">
+            <div className="w-full xl:w-105 shrink-0">
               <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm h-full">
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
                   Attendance Distribution
                 </h3>
 
-                <div className="w-full flex-1 h-[280px] justify-center items-center min-w-0">
+                <div className="w-full flex-1 h-70 justify-center items-center min-w-0">
                   {totalAttendance === 0 ? (
                     <div className="h-full flex items-center justify-center text-gray-500">
                       No attendance data available
@@ -545,7 +545,7 @@ const Attendance = () => {
                 </select>
               </div>
             </div>
-            <div className="h-[450px] w-full">
+            <div className="h-112.5 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={statistics}

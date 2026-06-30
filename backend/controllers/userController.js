@@ -124,6 +124,7 @@ exports.fetchAllUsers = async (req, res) => {
     const users = await User.find({});
     res.status(200).json({
       message: "Successfully fetched users",
+      totalUsers: users.length,
       users,
     });
   } catch (error) {

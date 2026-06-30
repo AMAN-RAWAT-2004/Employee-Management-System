@@ -8,7 +8,7 @@ import { useRef } from "react";
 import { useEffect } from "react";
 import logo from "./../assets/logo.png";
 const Sidebar = () => {
-  const { isAddEmployeeOpen, dark, isNavOpen, setIsNavOpen ,loggedInUser} =
+  const { isAddEmployeeOpen, dark, isNavOpen, setIsNavOpen, loggedInUser } =
     useContext(ModalContext);
   const sidebarRef = useRef(null);
 
@@ -53,154 +53,155 @@ const Sidebar = () => {
 
       <div className="lg:p-8">
         <div className="overflow-hidden transition-colors duration-200 ease-in-out max-h-96 opacity-100 mt-4">
-          {loggedInUser.role==="admin"?( <nav className="flex flex-col gap-4 font-semibold">
-            <NavLink
-              to="/"
-              onClick={() => setIsNavOpen(false)}
-              className={({ isActive }) =>
-                isActive
-                  ? `px-4 py-2 rounded-lg text-blue-500 ${
-                      dark ? "bg-gray-800" : "bg-blue-50"
-                    }`
-                  : `px-4 py-2 rounded-lg transition-colors duration-200 ${
-                      dark
-                        ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
-                        : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
-                    }`
-              }
-            >
-              Dashboard
-            </NavLink>
+          {loggedInUser.role === "admin" ? (
+            <nav className="flex flex-col gap-4 font-semibold">
+              <NavLink
+                to="/"
+                onClick={() => setIsNavOpen(false)}
+                className={({ isActive }) =>
+                  isActive
+                    ? `px-4 py-2 rounded-lg text-blue-500 ${
+                        dark ? "bg-gray-800" : "bg-blue-50"
+                      }`
+                    : `px-4 py-2 rounded-lg transition-colors duration-200 ${
+                        dark
+                          ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
+                          : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                      }`
+                }
+              >
+                Dashboard
+              </NavLink>
 
-            <NavLink
-              to="/employee"
-              onClick={() => setIsNavOpen(false)}
-              className={({ isActive }) =>
-                isActive
-                  ? `px-4 py-2 rounded-lg text-blue-500 ${
-                      dark ? "bg-gray-800" : "bg-blue-50"
-                    }`
-                  : `px-4 py-2 rounded-lg transition-colors duration-200 ${
-                      dark
-                        ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
-                        : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
-                    }`
-              }
-            >
-              Employee
-            </NavLink>
+              <NavLink
+                to="/employee"
+                onClick={() => setIsNavOpen(false)}
+                className={({ isActive }) =>
+                  isActive
+                    ? `px-4 py-2 rounded-lg text-blue-500 ${
+                        dark ? "bg-gray-800" : "bg-blue-50"
+                      }`
+                    : `px-4 py-2 rounded-lg transition-colors duration-200 ${
+                        dark
+                          ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
+                          : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                      }`
+                }
+              >
+                Employee
+              </NavLink>
 
-            <NavLink
-              to="/taskManagement"
-              onClick={() => setIsNavOpen(false)}
-              className={({ isActive }) =>
-                isActive
-                  ? `px-4 py-2 rounded-lg text-blue-500 ${
-                      dark ? "bg-gray-800" : "bg-blue-50"
-                    }`
-                  : `px-4 py-2 rounded-lg transition-colors duration-200 ${
-                      dark
-                        ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
-                        : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
-                    }`
-              }
-            >
-              Task Management
-            </NavLink>
+              <NavLink
+                to="/taskManagement"
+                onClick={() => setIsNavOpen(false)}
+                className={({ isActive }) =>
+                  isActive
+                    ? `px-4 py-2 rounded-lg text-blue-500 ${
+                        dark ? "bg-gray-800" : "bg-blue-50"
+                      }`
+                    : `px-4 py-2 rounded-lg transition-colors duration-200 ${
+                        dark
+                          ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
+                          : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                      }`
+                }
+              >
+                Task Management
+              </NavLink>
 
-            <NavLink
-              to="/attendance"
-              onClick={() => setIsNavOpen(false)}
-              className={({ isActive }) =>
-                isActive
-                  ? `px-4 py-2 rounded-lg text-blue-500 ${
-                      dark ? "bg-gray-800" : "bg-blue-50"
-                    }`
-                  : `px-4 py-2 rounded-lg transition-colors duration-200 ${
-                      dark
-                        ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
-                        : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
-                    }`
-              }
-            >
-              Attendance
-            </NavLink>
+              <NavLink
+                to="/attendance"
+                onClick={() => setIsNavOpen(false)}
+                className={({ isActive }) =>
+                  isActive
+                    ? `px-4 py-2 rounded-lg text-blue-500 ${
+                        dark ? "bg-gray-800" : "bg-blue-50"
+                      }`
+                    : `px-4 py-2 rounded-lg transition-colors duration-200 ${
+                        dark
+                          ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
+                          : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                      }`
+                }
+              >
+                Attendance
+              </NavLink>
 
-            <NavLink
-              to="/leave"
-              onClick={() => setIsNavOpen(false)}
-              className={({ isActive }) =>
-                isActive
-                  ? `px-4 py-2 rounded-lg text-blue-500 ${
-                      dark ? "bg-gray-800" : "bg-blue-50"
-                    }`
-                  : `px-4 py-2 rounded-lg transition-colors duration-200 ${
-                      dark
-                        ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
-                        : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
-                    }`
-              }
-            >
-              Leave
-            </NavLink>
-          </nav>):( <nav className="flex flex-col gap-4 font-semibold">
-            
+              <NavLink
+                to="/leave"
+                onClick={() => setIsNavOpen(false)}
+                className={({ isActive }) =>
+                  isActive
+                    ? `px-4 py-2 rounded-lg text-blue-500 ${
+                        dark ? "bg-gray-800" : "bg-blue-50"
+                      }`
+                    : `px-4 py-2 rounded-lg transition-colors duration-200 ${
+                        dark
+                          ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
+                          : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                      }`
+                }
+              >
+                Leave
+              </NavLink>
+            </nav>
+          ) : (
+            <nav className="flex flex-col gap-4 font-semibold">
+              <NavLink
+                to="/taskManagement"
+                onClick={() => setIsNavOpen(false)}
+                className={({ isActive }) =>
+                  isActive
+                    ? `px-4 py-2 rounded-lg text-blue-500 ${
+                        dark ? "bg-gray-800" : "bg-blue-50"
+                      }`
+                    : `px-4 py-2 rounded-lg transition-colors duration-200 ${
+                        dark
+                          ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
+                          : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                      }`
+                }
+              >
+                Task Management
+              </NavLink>
 
-            <NavLink
-              to="/taskManagement"
-              onClick={() => setIsNavOpen(false)}
-              className={({ isActive }) =>
-                isActive
-                  ? `px-4 py-2 rounded-lg text-blue-500 ${
-                      dark ? "bg-gray-800" : "bg-blue-50"
-                    }`
-                  : `px-4 py-2 rounded-lg transition-colors duration-200 ${
-                      dark
-                        ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
-                        : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
-                    }`
-              }
-            >
-              Task Management
-            </NavLink>
+              <NavLink
+                to="/attendance"
+                onClick={() => setIsNavOpen(false)}
+                className={({ isActive }) =>
+                  isActive
+                    ? `px-4 py-2 rounded-lg text-blue-500 ${
+                        dark ? "bg-gray-800" : "bg-blue-50"
+                      }`
+                    : `px-4 py-2 rounded-lg transition-colors duration-200 ${
+                        dark
+                          ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
+                          : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                      }`
+                }
+              >
+                Attendance
+              </NavLink>
 
-            <NavLink
-              to="/attendance"
-              onClick={() => setIsNavOpen(false)}
-              className={({ isActive }) =>
-                isActive
-                  ? `px-4 py-2 rounded-lg text-blue-500 ${
-                      dark ? "bg-gray-800" : "bg-blue-50"
-                    }`
-                  : `px-4 py-2 rounded-lg transition-colors duration-200 ${
-                      dark
-                        ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
-                        : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
-                    }`
-              }
-            >
-              Attendance
-            </NavLink>
-
-            <NavLink
-              to="/leave"
-              onClick={() => setIsNavOpen(false)}
-              className={({ isActive }) =>
-                isActive
-                  ? `px-4 py-2 rounded-lg text-blue-500 ${
-                      dark ? "bg-gray-800" : "bg-blue-50"
-                    }`
-                  : `px-4 py-2 rounded-lg transition-colors duration-200 ${
-                      dark
-                        ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
-                        : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
-                    }`
-              }
-            >
-              Leave
-            </NavLink>
-          </nav>)}
-         
+              <NavLink
+                to="/leave"
+                onClick={() => setIsNavOpen(false)}
+                className={({ isActive }) =>
+                  isActive
+                    ? `px-4 py-2 rounded-lg text-blue-500 ${
+                        dark ? "bg-gray-800" : "bg-blue-50"
+                      }`
+                    : `px-4 py-2 rounded-lg transition-colors duration-200 ${
+                        dark
+                          ? "text-gray-300 hover:bg-gray-800 hover:text-blue-400"
+                          : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                      }`
+                }
+              >
+                Leave
+              </NavLink>
+            </nav>
+          )}
         </div>
       </div>
     </aside>

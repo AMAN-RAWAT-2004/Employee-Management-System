@@ -57,7 +57,7 @@ const Navbar = () => {
   };
 
   const iconBtn = `
-    p-2 rounded-full transition-all cursor-pointer duration-200
+    p-2 rounded-full transition-all cursor-pointer duration-200 mr-4
     ${dark ? "hover:bg-zinc-800" : "hover:bg-gray-100"}
   `;
 
@@ -83,24 +83,28 @@ const Navbar = () => {
           <GiHamburgerMenu />
         </button>
 
-        <div className="hidden sm:block">
+        <div className="hidden lg:block">
           <Searchbar />
         </div>
 
-        <div className="hidden lg:flex items-center gap-5">
-          {/* <Link
-            to="/analytics"
-            className={`text-sm font-medium transition-colors duration-200 ${
-              dark ? "hover:text-gray-300" : "hover:text-blue-600"
-            }`}
-          >
-            Reports & Analytics
-          </Link> */}
+        <div className="flex items-center gap-5 mx-2">
+          {loggedInUser.role === "admin" && (
+            <Link
+              to="/analytics"
+              className={`text-sm font-medium transition-colors duration-200 ${
+                dark
+                  ? "hover:text-gray-300"
+                  : "hover:text-blue-600 text-gray-400"
+              }`}
+            >
+              Reports & Analytics
+            </Link>
+          )}
 
           <Link
             to="/help"
-            className={`text-sm font-medium transition-colors duration-200 ${
-              dark ? "hover:text-gray-300" : "hover:text-blue-600"
+            className={`hidden md:flex text-sm font-medium transition-colors duration-200 ${
+              dark ? "hover:text-gray-300" : "hover:text-blue-600 text-gray-400"
             }`}
           >
             Help
@@ -109,18 +113,18 @@ const Navbar = () => {
       </div>
 
       {/* Right Side */}
-      <div className="flex items-center gap-3 lg:gap-5">
+      <div className="flex  items-center gap-3 lg:gap-5">
         {/* Theme Toggle */}
         <button onClick={() => setDark(!dark)} className={iconBtn}>
           {dark ? (
-            <RiSunLine className="text-xl text-yellow-400" />
+            <RiSunLine className="text-xl  text-yellow-400" />
           ) : (
-            <MdDarkMode className="text-xl text-gray-600" />
+            <MdDarkMode className="text-xl  text-gray-400" />
           )}
         </button>
 
         {/* Action Icons */}
-        <div
+        {/* <div
           className={`hidden sm:flex items-center gap-4 px-4 transition-colors duration-200 border-x ${
             dark ? "border-gray-700" : "border-gray-200"
           }`}
@@ -137,7 +141,7 @@ const Navbar = () => {
           <button className={`${iconBtn}`}>
             <IoCalendarOutline className="text-xl" />
           </button>
-        </div>
+        </div> */}
 
         {/* Profile */}
         <div ref={profileRef} className="relative">

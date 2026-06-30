@@ -241,13 +241,20 @@ exports.recentEmployee = async (req, res) => {
         $lt: tomorrow,
       },
     });
+    const onLeaveToday = await Attendance.countDocuments({
+      status: "Leave",
+      date: {
+        $gte: today,
+        $lt: tomorrow,
+      },
+    });
 
-    const onLeaveToday = (
-      await Leave.distinct("employee", {
-        status: "Approved",
-        startDate: { $gte: today, $lt: tomorrow },
-      })
-    ).length;
+    //  const onLeaveToday= (
+    //   await Leave.distinct("employee", {
+    //     status: "Approved",
+    //     startDate: { $gte: today, $lt: tomorrow },
+    //   })
+    // ).length;
 
     const CountNewEmployees = await User.countDocuments({
       role: "employee",
@@ -281,6 +288,61 @@ exports.employeeDetails = async (req, res) => {
       });
     }
     res.status(200).json(employee);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+exports.fetchEmpoyeeCountByDepartment = async (req, res) => {
+  try {
+    const departmentStats = await User.aggregate([
+      {
+        $match: {
+          role: "employee",
+          status: { $ne: "Inactive" },
+        },
+      },
+      {
+        $group: {
+          _id: "$department",
+          totalEmployees: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          department: "$_id",
+          totalEmployees: 1,
+        },
+      },
+      {
+        $sort: {
+          totalEmployees: -1,
+        },
+      },
+    ]);
+    res.status(200).json({
+      message: "Succesfully Fetch Employee By Department",
+      departmentStats,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+exports.EmployeeCount = async (req, res) => {
+  try {
+    const totalEmployees = await User.countDocuments({
+      role: "employee",
+      status: { $ne: "Inactive" },
+    });
+    res.status(200).json({
+      success: true,
+      totalEmployees,
+    });
   } catch (error) {
     res.status(500).json({
       message: error.message,

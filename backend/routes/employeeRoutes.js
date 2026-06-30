@@ -8,12 +8,23 @@ router.post(
   authMiddleware.admin,
   employeeController.addEmployee,
 );
-
+router.get(
+  "/employee-count",
+  authMiddleware.protect,
+  authMiddleware.admin,
+  employeeController.EmployeeCount,
+);
 router.get(
   "/recent-employee",
   authMiddleware.protect,
   authMiddleware.admin,
   employeeController.recentEmployee,
+);
+router.get(
+  "/department-stats",
+  authMiddleware.protect,
+  authMiddleware.admin,
+  employeeController.fetchEmpoyeeCountByDepartment,
 );
 router
   .route("/:id")
@@ -32,12 +43,10 @@ router
     // authMiddleware.admin,
     employeeController.employeeDetails,
   );
-router
-  .route("/")
-  .get(
-    authMiddleware.protect,
-    authMiddleware.admin,
-    employeeController.fetchEmployeeOnly,
-  );
+router.route("/").get(
+  authMiddleware.protect,
+  // authMiddleware.admin,
+  employeeController.fetchEmployeeOnly,
+);
 
 module.exports = router;
