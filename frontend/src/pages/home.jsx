@@ -9,7 +9,7 @@ import { ModalContext } from "../context/modalContext";
 const Home = () => {
   const [totalEmployees, setTotalEmployees] = useState(0);
   const [newUsers, setNewUsers] = useState(0);
-  const [totalEmployees, setTotalEmployees] = useState(null);
+  // const [totalEmployees, setTotalEmployees] = useState(null);
   const [recentUsers, setRecentUsers] = useState([]);
   const [recentTasks, setRecentTasks] = useState([]);
   const [onLeaveToday, setOnLeaveToday] = useState(0);
