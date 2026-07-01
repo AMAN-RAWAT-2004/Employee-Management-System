@@ -9,6 +9,7 @@ const taskRoutes = require("./routes/taskRoutes");
 const attendanceRoutes = require("./routes/attendanceRoute");
 const leaveRoutes = require("./routes/leaveRoutes");
 const cors = require("cors");
+const compression = require("compression");
 dotEnv.config({});
 const corsOptions = {
   origin: [
@@ -22,7 +23,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
-
+app.use(compression());
 DB();
 
 app.get("/", (req, res) => {
