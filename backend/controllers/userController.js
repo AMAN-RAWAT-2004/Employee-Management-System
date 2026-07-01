@@ -62,44 +62,44 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
+    console.time("Total Login");
+
     const { email, password, rememberMe } = req.body;
-    // console.log(rememberMe);
 
     if (!email || !password) {
       return res.status(400).json({
         message: "All fields are required",
       });
     }
-
+    console.time("Find User");
     const user = await User.findOne({ email }).select("+password");
-
+    console.timeEnd("Find User");
     if (!user) {
       return res.status(401).json({
         message: "Invalid email or password",
       });
     }
 
-    // if (user.role !== "admin") {
-    //   return res.status(403).json({
-    //     message: "Access denied. Admins only.",
-    //   });
-    // }
 
+    console.time("Compare Password");
     const isMatch = await bcrypt.compare(password, user.password);
+    console.timeEnd("Compare Password");
 
     if (!isMatch) {
       return res.status(401).json({
         message: "Invalid email or password",
       });
     }
+
     const expiry = rememberMe
       ? process.env.JWT_EXPIRES_IN_REMEMBER
       : process.env.JWT_EXPIRES_IN_NOT_REMEMBER;
 
+    console.time("Sign Token");
     const token = signToken(user._id, expiry);
-
+    console.timeEnd("Sign Token");
     user.password = undefined;
-
+    console.timeEnd("Total Login");
     res.status(200).json({
       message: "Successfully logged in",
       user: {
