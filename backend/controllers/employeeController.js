@@ -5,11 +5,7 @@ const Leave = require("../model/leaveModel");
 const Attendance = require("../model/attendanceModel");
 const { getISTDayRange } = require("../utils/date");
 const Tasks = require("../model/taskModel");
-const signToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECURE, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
-  });
-};
+
 exports.addEmployee = async (req, res) => {
   try {
     const {
@@ -193,7 +189,7 @@ exports.fetchEmployeeOnly = async (req, res) => {
 
     if (page && limit) {
       const skip = (page - 1) * limit;
-      query = query.skip(skip).limit(limit);
+      query = query.skip(skip).limit(limit).lean();
     }
 
     const employees = await query;
@@ -301,7 +297,7 @@ exports.fetchDashboard = async (req, res) => {
 exports.employeeDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    const employee = await User.findById(id);
+    const employee = await User.findById(id).lean();
     if (!employee) {
       return res.status(404).json({
         message: "employee not found",
@@ -353,19 +349,3 @@ exports.fetchEmpoyeeCountByDepartment = async (req, res) => {
   }
 };
 
-exports.EmployeeCount = async (req, res) => {
-  try {
-    const totalEmployees = await User.countDocuments({
-      role: "employee",
-      status: { $ne: "Inactive" },
-    });
-    res.status(200).json({
-      success: true,
-      totalEmployees,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-};
