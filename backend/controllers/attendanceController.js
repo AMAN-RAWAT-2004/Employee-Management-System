@@ -207,47 +207,6 @@ exports.deleteAttendance = async (req, res) => {
   }
 };
 
-exports.getAttendanceByDateRange = async (req, res) => {
-  try {
-    const { employeeId } = req.params;
-    const { startDate, endDate } = req.query;
-
-    if (!startDate || !endDate) {
-      return res.status(400).json({
-        message: "Start date and end date are required",
-      });
-    }
-
-    const employee = await User.findById(employeeId);
-    if (!employee) {
-      return res.status(404).json({
-        message: "Employee not found",
-      });
-    }
-
-    const { start } = getISTDayRange(new Date(startDate));
-    const { end } = getISTDayRange(new Date(endDate));
-
-    const attendance = await Attendance.find({
-      employee: employeeId,
-      date: { $gte: start, $lte: end },
-    })
-      .populate("employee", "name email designation department")
-      .sort({ date: -1 });
-
-    res.status(200).json({
-      count: attendance.length,
-      startDate,
-      endDate,
-      attendance,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-};
-
 exports.getAttendanceStatistics = async (req, res) => {
   try {
     const { employeeId, month, year } = req.query;
@@ -425,7 +384,6 @@ exports.checkIn = async (req, res) => {
         message: "You have already checked in today.",
       });
     }
-    // const { start, end } = getISTDayRange();
 
     if (!attendance) {
       attendance = await Attendance.create({

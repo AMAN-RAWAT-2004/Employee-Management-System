@@ -26,11 +26,7 @@ router.put("/check-out", authMiddleware.protect, attendanceController.checkOut);
 
 router.get("/statistics", attendanceController.getAttendanceStatistics);
 
-router.get(
-  "/employee/:employeeId/date-range",
-  authMiddleware.protect,
-  attendanceController.getAttendanceByDateRange,
-);
+
 
 router.get(
   "/today",

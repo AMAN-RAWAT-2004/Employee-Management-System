@@ -6,10 +6,10 @@ const Footer = () => {
   const { dark } = useContext(ModalContext);
   return (
     <footer
-      className={` w-full   flex items-center justify-around border-t transition-colors duration-200 ${dark ? "bg-gray-900 border-gray-700" : "border-gray-200 bg-white"}  px-4 py-3  `}
+      className={` w-full  flex flex-col md:flex-row gap-3 items-center justify-around border-t transition-colors duration-200 ${dark ? "bg-gray-900 border-gray-700" : "border-gray-200 bg-white"}  px-4 py-3  `}
     >
       <div>
-        <p className={`text-sm ${dark ? "text-white" : "text-gray-500"}`}>
+        <p className={`text-sm w-70 md:w-full text-center ${dark ? "text-white" : "text-gray-500"}`}>
           © 2026 EmployeeHub. Proudly powered by{" "}
           <span className="font-medium text-blue-400">Amandeep Rawat</span>.
         </p>

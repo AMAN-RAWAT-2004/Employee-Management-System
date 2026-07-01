@@ -98,7 +98,6 @@ const EmployeeAttendance = () => {
 
   const formatDuration = (minutes) => {
     if (!minutes) return "--";
-
     const hrs = Math.floor(minutes / 60);
     const mins = minutes % 60;
 
@@ -288,16 +287,14 @@ const EmployeeAttendance = () => {
                 {attendance?.checkIn && (
                   <div className="flex items-center gap-2 text-green-600">
                     <IoCheckmarkCircle />
-                    Checked In at{" "}
-                    <p>{formatTime(attendance?.checkIn)}</p>
+                    Checked In at <p>{formatTime(attendance?.checkIn)}</p>
                   </div>
                 )}
 
                 {attendance?.checkOut && (
                   <div className="flex items-center gap-2 text-blue-600">
                     <IoCheckmarkCircle />
-                    Checked Out at{" "}
-                    <p>{formatTime(attendance?.checkOut)}</p>
+                    Checked Out at <p>{formatTime(attendance?.checkOut)}</p>
                   </div>
                 )}
 
