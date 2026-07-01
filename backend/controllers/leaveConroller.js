@@ -1,7 +1,7 @@
 const User = require("../model/userModel");
 const Attendance = require("../model/attendanceModel");
 const Leave = require("../model/leaveModel");
-
+const { getISTDayRange } = require("../utils/date");
 exports.addLeave = async (req, res) => {
   try {
     const {
@@ -53,8 +53,8 @@ exports.addLeave = async (req, res) => {
     let totalDays = 0;
 
     if (leaveType === "HalfDay") {
-      start = new Date(startDate);
-      end = new Date(startDate);
+      const { start: start } = getISTDateRange(startDate);
+      const { end: end } = getISTDateRange(endDate);
 
       const dayName = start.toLocaleDateString("en-US", {
         weekday: "long",
@@ -72,8 +72,8 @@ exports.addLeave = async (req, res) => {
       const existingLeave = await Leave.findOne({
         employee,
         startDate: {
-          $gte: new Date(startDate + "T00:00:00.000Z"),
-          $lte: new Date(startDate + "T23:59:59.999Z"),
+          $gte: start,
+          $lte: end,
         },
       });
 
@@ -84,8 +84,8 @@ exports.addLeave = async (req, res) => {
         });
       }
     } else {
-      start = new Date(startDate);
-      end = new Date(endDate);
+      const { start: start } = getISTDateRange(startDate);
+      const { end: end } = getISTDateRange(endDate);
 
       if (end < start) {
         return res.status(400).json({
@@ -406,11 +406,9 @@ exports.getLeaveDashboardStats = async (req, res) => {
         ) + 1;
     });
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const { start, end } = getISTDayRange();
+    const today = start;
+    const tomorrow = end;
 
     const todayPresent = await Attendance.countDocuments({
       status: "Present",
